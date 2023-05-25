@@ -1,3 +1,4 @@
+import pickle
 from pathlib import Path
 
 from langchain import (
@@ -12,6 +13,7 @@ from langchain.agents import AgentType
 
 import streamlit as st
 
+from capturing_callback_handler import CapturingCallbackHandler
 from streamlit_callback_handler import StreamlitCallbackHandler
 
 DB_PATH = (Path(__file__).parent / "Chinook.db").absolute()
@@ -44,9 +46,13 @@ mrkl = initialize_agent(
 )
 
 # Streamlit starts here
-callback_handler = StreamlitCallbackHandler(st.container())
+streamlit_handler = StreamlitCallbackHandler(st.container())
+capturing_handler = CapturingCallbackHandler()
 
 mrkl.run(
     "Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?",
-    callbacks=[callback_handler],
+    callbacks=[streamlit_handler, capturing_handler],
 )
+
+with open("runs/mrkl.pickle", "wb") as file:
+    pickle.dump(capturing_handler.records, file)
