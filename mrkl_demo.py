@@ -50,9 +50,9 @@ streamlit_handler = StreamlitCallbackHandler(st.container())
 capturing_handler = CapturingCallbackHandler()
 
 mrkl.run(
-    "Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?",
+    "What is the full name of the artist who recently released an album called 'The Storm Before the Calm' and are they in the FooBar database? If so, what albums of theirs are in the FooBar database?",
     callbacks=[streamlit_handler, capturing_handler],
 )
 
-with open("runs/leonardo_dicaprio.pickle", "wb") as file:
+with open("runs/alanis.pickle", "wb") as file:
     pickle.dump(capturing_handler.records, file)
