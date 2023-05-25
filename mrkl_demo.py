@@ -54,5 +54,5 @@ mrkl.run(
     callbacks=[streamlit_handler, capturing_handler],
 )
 
-with open("runs/mrkl.pickle", "wb") as file:
+with open("runs/leonardo_dicaprio.pickle", "wb") as file:
     pickle.dump(capturing_handler.records, file)
