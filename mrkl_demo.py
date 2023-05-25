@@ -12,6 +12,8 @@ from langchain.agents import AgentType
 
 import streamlit as st
 
+from streamlit_callback_handler import StreamlitCallbackHandler
+
 DB_PATH = (Path(__file__).parent / "Chinook.db").absolute()
 
 llm = OpenAI(temperature=0, openai_api_key=st.secrets["openai_api_key"])
@@ -40,6 +42,11 @@ tools = [
 mrkl = initialize_agent(
     tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
 )
+
+# Streamlit starts here
+callback_handler = StreamlitCallbackHandler(st.container())
+
 mrkl.run(
-    "Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?"
+    "Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?",
+    callbacks=[callback_handler],
 )

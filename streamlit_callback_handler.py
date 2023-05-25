@@ -6,30 +6,21 @@ from typing import Any, Optional
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
-import streamlit as st
+from streamlit.delta_generator import DeltaGenerator
 
 
-# TODO: TO BE FIXED, agent thoughts gone missing after state changed, need to look into _llm_stream initialization
-class StreamlitCallBackHandler(BaseCallbackHandler):
-    """Callback Handler that prints to std out."""
-
-    def __init__(self, retry_attempt) -> None:
+class StreamlitCallbackHandler(BaseCallbackHandler):
+    def __init__(self, container: DeltaGenerator):
         """Initialize callback handler."""
-        self.last_action = None
-        self.retry = retry_attempt
-        self.container = st.session_state.thoughts_space
-
-    def show_agent_thought(self, thought: str):
-        if not st.session_state.show_agent_thoughts:
-            return
-        self.container.markdown(thought)
+        self._container = container
+        self._llm_stream = ""
 
     def on_llm_start(
         self, serialized: dict[str, Any], prompts: list[str], **kwargs: Any
     ) -> None:
         """Print out the prompts."""
-        self.container.markdown("**Agent Next Step:**")
-        self._llm_writer = self.container.empty()
+        self._container.markdown("**Agent Next Step:**")
+        self._llm_writer = self._container.empty()
         self._llm_stream = ""
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
@@ -40,14 +31,14 @@ class StreamlitCallBackHandler(BaseCallbackHandler):
         self._llm_writer.markdown(response.generations[0][0].text)
 
     def on_llm_error(self, error: Exception | KeyboardInterrupt, **kwargs: Any) -> None:
-        self.container.write("**LLM encountered an error...**")
-        self.container.exception(error)
+        self._container.write("**LLM encountered an error...**")
+        self._container.exception(error)
 
     def on_tool_start(
         self, serialized: dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
-        self.container.markdown(f"**Executing tool `{serialized['name']}`**")
-        self.container.markdown(f"**Input:** `{input_str}`")
+        self._container.markdown(f"**Executing tool `{serialized['name']}`**")
+        self._container.markdown(f"**Input:** `{input_str}`")
 
     def on_tool_end(
         self,
@@ -57,13 +48,13 @@ class StreamlitCallBackHandler(BaseCallbackHandler):
         llm_prefix: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
-        self.container.markdown(f"**Output:**\n\n{output}")
+        self._container.markdown(f"**Output:**\n\n{output}")
 
     def on_tool_error(
         self, error: Exception | KeyboardInterrupt, **kwargs: Any
     ) -> None:
-        self.container.write("**Tool encountered an error...**")
-        self.container.exception(error)
+        self._container.write("**Tool encountered an error...**")
+        self._container.exception(error)
 
     def on_text(
         self,
@@ -95,7 +86,7 @@ class StreamlitCallBackHandler(BaseCallbackHandler):
         self, action: AgentAction, color: Optional[str] = None, **kwargs: Any
     ) -> Any:
         """Run on agent action."""
-        self.last_action = action
+        pass
 
     def on_agent_finish(
         self, finish: AgentFinish, color: Optional[str] = None, **kwargs: Any
