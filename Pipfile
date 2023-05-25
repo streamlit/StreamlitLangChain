@@ -7,6 +7,7 @@ name = "pypi"
 streamlit = "*"
 langchain = "*"
 openai = "*"
+google-search-results = "*"
 
 [dev-packages]
 black = "*"
