@@ -24,7 +24,7 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         self._llm_stream = ""
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
-        # This is never called. Is it a modal thing?
+        # This is only called when the LLM is initialized with `streaming=True`
         self._container.markdown(f"**on_llm_new_token**: `{token}`")
         self._llm_stream += token
         self._llm_writer.markdown(self._llm_stream)

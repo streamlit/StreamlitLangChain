@@ -18,7 +18,7 @@ from streamlit_callback_handler import StreamlitCallbackHandler
 
 DB_PATH = (Path(__file__).parent / "Chinook.db").absolute()
 
-llm = OpenAI(temperature=0, openai_api_key=st.secrets["openai_api_key"])
+llm = OpenAI(temperature=0, openai_api_key=st.secrets["openai_api_key"], streaming=True)
 search = SerpAPIWrapper(serpapi_api_key=st.secrets["serpapi_api_key"])
 llm_math_chain = LLMMathChain(llm=llm, verbose=True)
 db = SQLDatabase.from_uri(f"sqlite:///{DB_PATH}")
@@ -41,18 +41,18 @@ tools = [
     ),
 ]
 
-mrkl = initialize_agent(
-    tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
-)
-
 # Streamlit starts here
 streamlit_handler = StreamlitCallbackHandler(st.container())
 capturing_handler = CapturingCallbackHandler()
 
+mrkl = initialize_agent(
+    tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
+)
+
 mrkl.run(
-    "What is the full name of the artist who recently released an album called 'The Storm Before the Calm' and are they in the FooBar database? If so, what albums of theirs are in the FooBar database?",
+    "Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?",
     callbacks=[streamlit_handler, capturing_handler],
 )
 
-with open("runs/alanis.pickle", "wb") as file:
-    pickle.dump(capturing_handler.records, file)
+# with open("runs/leo_streaming.pickle", "wb") as file:
+#     pickle.dump(capturing_handler.records, file)
