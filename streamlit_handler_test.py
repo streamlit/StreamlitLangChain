@@ -9,7 +9,7 @@ from langchain.callbacks.streamlit import (
     StreamlitCallbackHandler as OrigStreamlitCallbackHandler,
 )
 
-RUN_PATH = Path(__file__).parent / "runs" / "leo.pickle"
+RUN_PATH = Path(__file__).parent / "runs" / "alanis_streaming.pickle"
 
 streamlit_handler = StreamlitCallbackHandler(st.container())
 # streamlit_handler = OrigStreamlitCallbackHandler()
