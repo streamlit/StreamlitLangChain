@@ -5,14 +5,12 @@ from langchain.callbacks import StdOutCallbackHandler
 
 from capturing_callback_handler import playback_callbacks
 from streamlit_callback_handler import StreamlitCallbackHandler
-from langchain.callbacks.streamlit import (
-    StreamlitCallbackHandler as OrigStreamlitCallbackHandler,
-)
+from streamlit_debug_callback_handler import StreamlitDebugCallbackHandler
 
 RUN_PATH = Path(__file__).parent / "runs" / "alanis_streaming.pickle"
 
-streamlit_handler = StreamlitCallbackHandler(st.container())
-# streamlit_handler = OrigStreamlitCallbackHandler()
+# streamlit_handler = StreamlitCallbackHandler(st.container())
+streamlit_handler = StreamlitDebugCallbackHandler(st.container())
 playback_callbacks(
     [streamlit_handler, StdOutCallbackHandler()], str(RUN_PATH), with_pauses=False
 )
