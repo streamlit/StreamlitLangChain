@@ -19,16 +19,19 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         self, serialized: dict[str, Any], prompts: list[str], **kwargs: Any
     ) -> None:
         """Print out the prompts."""
-        self._container.markdown("**Agent Next Step:**")
+        self._container.markdown(f"**on_llm_start:**: `{serialized}`")
         self._llm_writer = self._container.empty()
         self._llm_stream = ""
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
+        # This is never called. Is it a modal thing?
+        self._container.markdown(f"**on_llm_new_token**: `{token}`")
         self._llm_stream += token
         self._llm_writer.markdown(self._llm_stream)
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
-        self._llm_writer.markdown(response.generations[0][0].text)
+        self._container.markdown(f"**on_llm_end**:\n{response.generations[0][0].text}")
+        # self._llm_writer.markdown(response.generations[0][0].text)
 
     def on_llm_error(self, error: Exception | KeyboardInterrupt, **kwargs: Any) -> None:
         self._container.write("**LLM encountered an error...**")
@@ -37,7 +40,7 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
     def on_tool_start(
         self, serialized: dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
-        self._container.markdown(f"**Executing tool `{serialized['name']}`**")
+        self._container.markdown(f"**on_tool_start `{serialized['name']}`**")
         self._container.markdown(f"**Input:** `{input_str}`")
 
     def on_tool_end(
@@ -48,7 +51,7 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         llm_prefix: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
-        self._container.markdown(f"**Output:**\n\n{output}")
+        self._container.markdown(f"**on_tool_end**\n`{output}`")
 
     def on_tool_error(
         self, error: Exception | KeyboardInterrupt, **kwargs: Any
@@ -63,8 +66,8 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         end: str = "",
         **kwargs: Any,
     ) -> None:
-        # Honestly not sure what this does but it creates lots of extra output
         pass
+        # self._container.write(f"**on_text**: `{text}`")
 
     def on_chain_start(
         self, serialized: dict[str, Any], inputs: dict[str, Any], **kwargs: Any
@@ -85,11 +88,10 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
     def on_agent_action(
         self, action: AgentAction, color: Optional[str] = None, **kwargs: Any
     ) -> Any:
-        """Run on agent action."""
-        pass
+        self._container.markdown(f"**on_agent_action**: `{action}`")
 
     def on_agent_finish(
         self, finish: AgentFinish, color: Optional[str] = None, **kwargs: Any
     ) -> None:
         # we already show the output so no need to do anything here
-        pass
+        self._container.markdown(f"**on_agent_finish**: `{finish}`")
