@@ -121,6 +121,7 @@ class StreamlitDebugCallbackHandler(BaseCallbackHandler):
         """Do nothing."""
         tool_name = serialized["name"]
         self._tool_stack.append(tool_name)
+        self._print_text(f"**on_tool_start: {tool_name}**")
 
     def on_agent_action(
         self, action: AgentAction, color: Optional[str] = None, **kwargs: Any
