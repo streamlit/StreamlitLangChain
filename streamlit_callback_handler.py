@@ -36,8 +36,10 @@ class LLMThought:
             self._llm_token_writer.markdown(self._llm_token_stream)
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
-        self._container.markdown(f"**on_llm_end**:\n{response.generations[0][0].text}")
-        # self._llm_writer.markdown(response.generations[0][0].text)
+        # `response` is the concatenation of all the tokens received by the LLM.
+        # If we're receiving streaming tokens from `on_llm_new_token`, this response
+        # data is redundant
+        pass
 
     def on_llm_error(self, error: Exception | KeyboardInterrupt, **kwargs: Any) -> None:
         self._container.write("**LLM encountered an error...**")
@@ -46,8 +48,9 @@ class LLMThought:
     def on_tool_start(
         self, serialized: dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
-        self._container.markdown(f"**on_tool_start `{serialized['name']}`**")
-        self._container.markdown(f"**Input:** `{input_str}`")
+        self._container.markdown(
+            f"**on_tool_start `{serialized['name']}`**: `{input_str}`"
+        )
 
     def on_tool_end(
         self,
@@ -57,7 +60,7 @@ class LLMThought:
         llm_prefix: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
-        self._container.markdown(f"**on_tool_end**\n`{output}`")
+        self._container.markdown(f"`{output}`")
 
     def on_tool_error(
         self, error: Exception | KeyboardInterrupt, **kwargs: Any
@@ -68,7 +71,11 @@ class LLMThought:
     def on_agent_action(
         self, action: AgentAction, color: Optional[str] = None, **kwargs: Any
     ) -> Any:
-        self._container.markdown(f"**on_agent_action**: `{action}`")
+        # Called when we're about to kick off a new tool. The `action` data
+        # tells us the tool we're about to use, and the input we'll give it.
+        # We don't output anything here, because we'll receive this same data
+        # when `on_tool_start` is called immediately after.
+        pass
 
 
 class StreamlitCallbackHandler(BaseCallbackHandler):
