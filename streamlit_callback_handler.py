@@ -9,6 +9,11 @@ from langchain.schema import AgentAction, AgentFinish, LLMResult
 from streamlit.delta_generator import DeltaGenerator
 
 
+def _convert_newlines(text: str) -> str:
+    """Convert newline characters to markdown newline sequences (space, space, newline)"""
+    return text.replace("\n", "  \n")
+
+
 class LLMThought:
     def __init__(
         self,
@@ -25,7 +30,7 @@ class LLMThought:
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         # This is only called when the LLM is initialized with `streaming=True`
-        self._llm_token_stream += token
+        self._llm_token_stream += _convert_newlines(token)
 
         if self._llm_token_writer is None:
             # Create a new Markdown element for our token stream at the next location
