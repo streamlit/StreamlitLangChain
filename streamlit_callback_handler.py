@@ -53,9 +53,10 @@ class LLMThought:
     def on_tool_start(
         self, serialized: dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
-        self._container.markdown(
-            f"**on_tool_start `{serialized['name']}`**: `{input_str}`"
-        )
+        # Called with the name of the tool we're about to run (in `serialized[name]`),
+        # and its input. We don't output this, because it's redundant: the LLM will
+        # have just printed the name of the tool and its input before calling the tool.
+        pass
 
     def on_tool_end(
         self,
@@ -65,7 +66,7 @@ class LLMThought:
         llm_prefix: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
-        self._container.markdown(f"`{output}`")
+        self._container.markdown(f"**{output}**")
 
     def on_tool_error(
         self, error: Exception | KeyboardInterrupt, **kwargs: Any
