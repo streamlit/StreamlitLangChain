@@ -15,18 +15,19 @@ def _convert_newlines(text: str) -> str:
 
 
 class LLMThought:
-    def __init__(
-        self,
-        parent_container: DeltaGenerator,
-        serialized: dict[str, Any],
-        prompts: list[str],
-        **kwargs: Any,
-    ):
+    def __init__(self, parent_container: DeltaGenerator, name: str):
         self._container = parent_container.expander(
-            f"Thought: {serialized}...", expanded=True
+            f"Thought: {name}...", expanded=True
         )
         self._llm_token_stream = ""
         self._llm_token_writer: Optional[DeltaGenerator] = None
+
+    def _reset_llm_token_stream(self) -> None:
+        self._llm_token_stream = ""
+        self._llm_token_writer = None
+
+    def on_llm_start(self, serialized: dict[str, Any], prompts: list[str]) -> None:
+        self._reset_llm_token_stream()
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         # This is only called when the LLM is initialized with `streaming=True`
@@ -44,7 +45,7 @@ class LLMThought:
         # `response` is the concatenation of all the tokens received by the LLM.
         # If we're receiving streaming tokens from `on_llm_new_token`, this response
         # data is redundant
-        pass
+        self._reset_llm_token_stream()
 
     def on_llm_error(self, error: Exception | KeyboardInterrupt, **kwargs: Any) -> None:
         self._container.write("**LLM encountered an error...**")
@@ -98,10 +99,9 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
     def on_llm_start(
         self, serialized: dict[str, Any], prompts: list[str], **kwargs: Any
     ) -> None:
-        # Create a new LLMThought every time an LLM starts
-        self._current_thought = LLMThought(
-            self._container, serialized, prompts, **kwargs
-        )
+        if self._current_thought is None:
+            self._current_thought = LLMThought(self._container, "Unknown")
+        self._current_thought.on_llm_start(serialized, prompts)
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         self._require_current_thought().on_llm_new_token(token, **kwargs)
@@ -128,6 +128,9 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         self._require_current_thought().on_tool_end(
             output, color, observation_prefix, llm_prefix, **kwargs
         )
+        # Each thought is comprised of a single tool action, so close our
+        # current thought whenever a tool ends.
+        self._current_thought = None
 
     def on_tool_error(
         self, error: Exception | KeyboardInterrupt, **kwargs: Any
