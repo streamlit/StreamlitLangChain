@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Optional
+from typing import Any, Optional, NamedTuple
 
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
@@ -17,6 +17,10 @@ def _convert_newlines(text: str) -> str:
     return text.replace("\n", "  \n")
 
 
+CHECKMARK_EMOJI = "✅"
+THINKING_EMOJI = ":thinking_face:"
+
+
 class LLMThoughtState(Enum):
     # The LLM is thinking about what to do next. We don't know which tool we'll run.
     THINKING = "THINKING"
@@ -26,16 +30,22 @@ class LLMThoughtState(Enum):
     COMPLETE = "COMPLETE"
 
 
+class ToolRun(NamedTuple):
+    name: str
+    input_str: str
+
+
 class LLMThought:
     def __init__(self, parent_container: DeltaGenerator, expanded: bool):
         self._container = MutableExpander(
             parent_container=parent_container,
-            label=":thinking_face: **Thinking...**",
+            label=f"{THINKING_EMOJI} **Thinking...**",
             expanded=expanded,
         )
         self._state = LLMThoughtState.THINKING
         self._llm_token_stream = ""
         self._llm_token_writer_idx: Optional[int] = None
+        self._cur_tool: Optional[ToolRun] = None
 
     def _reset_llm_token_stream(self) -> None:
         self._llm_token_stream = ""
@@ -69,7 +79,10 @@ class LLMThought:
         # have just printed the name of the tool and its input before calling the tool.
         self._state = LLMThoughtState.RUNNING_TOOL
         tool_name = serialized["name"]
-        self._container.update(new_label=f"**{tool_name}**: {input_str}")
+        self._cur_tool = ToolRun(name=tool_name, input_str=input_str)
+        self._container.update(
+            new_label=self._get_tool_label(THINKING_EMOJI, self._cur_tool)
+        )
 
     def on_tool_end(
         self,
@@ -96,12 +109,16 @@ class LLMThought:
         # when `on_tool_start` is called immediately after.
         pass
 
-    def finish(self) -> None:
+    def finish(self, final_label: Optional[str] = None) -> None:
         """Finish the thought."""
-        if self._state == LLMThoughtState.COMPLETE:
-            return
+        if final_label is None and self._state == LLMThoughtState.RUNNING_TOOL:
+            final_label = self._get_tool_label(CHECKMARK_EMOJI, self._cur_tool)
         self._state = LLMThoughtState.COMPLETE
-        self._container.update(new_label=f"✅ {self._container.label}")
+        self._container.update(new_label=final_label)
+
+    @staticmethod
+    def _get_tool_label(emoji: str, tool: ToolRun) -> str:
+        return f"{emoji} **{tool.name}**: {tool.input_str}"
 
 
 class StreamlitCallbackHandler(BaseCallbackHandler):
@@ -191,6 +208,10 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
     def on_agent_finish(
         self, finish: AgentFinish, color: Optional[str] = None, **kwargs: Any
     ) -> None:
+        if self._current_thought is not None:
+            self._current_thought.finish(f"{CHECKMARK_EMOJI} **Complete!**")
+            self._current_thought = None
+
         if "output" in finish.return_values:
             self._container.markdown(finish.return_values["output"])
         else:
