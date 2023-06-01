@@ -19,18 +19,44 @@ class ChildRecord(NamedTuple):
 
 
 class MutableExpander:
-    """An expander that can be renamed."""
+    """An expander that can be renamed and dynamically expanded/collapsed."""
 
     def __init__(self, parent_container: DeltaGenerator, label: str, expanded: bool):
+        self._label = label
+        self._expanded = expanded
         self._parent_cursor = parent_container.empty()
         self._container = self._parent_cursor.expander(label, expanded)
         self._children: list[ChildRecord] = []
 
-    def change_state(self, label: str, expanded: bool) -> None:
+    @property
+    def label(self) -> str:
+        return self._label
+
+    @property
+    def expanded(self) -> bool:
+        return self._expanded
+
+    def update(
+        self, *, new_label: Optional[str] = None, new_expanded: Optional[bool] = None
+    ) -> None:
         """Change the expander's label and expanded state"""
+        if new_label is None:
+            new_label = self._label
+        if new_expanded is None:
+            new_expanded = self._expanded
+
+        if self._label == new_label and self._expanded == new_expanded:
+            # No change!
+            return
+
+        self._label = new_label
+        self._expanded = new_expanded
+        self._container = self._parent_cursor.expander(new_label, new_expanded)
+
         prev_children = self._children
-        self._container = self._parent_cursor.expander(label, expanded)
         self._children = []
+
+        # Replay all children into the new container
         for child in prev_children:
             if child.type == ChildType.MARKDOWN:
                 self.markdown(**child.kwargs)

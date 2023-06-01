@@ -9,6 +9,8 @@ from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 from streamlit.delta_generator import DeltaGenerator
 
+from mutable_expander import MutableExpander
+
 
 def _convert_newlines(text: str) -> str:
     """Convert newline characters to markdown newline sequences (space, space, newline)"""
@@ -26,17 +28,18 @@ class LLMThoughtState(Enum):
 
 class LLMThought:
     def __init__(self, parent_container: DeltaGenerator, expanded: bool):
-        self._container_cursor = parent_container.empty()
-        self._state = LLMThoughtState.THINKING
-        self._container = self._container_cursor.expander(
-            ":thinking_face: **Thinking...**", expanded=expanded
+        self._container = MutableExpander(
+            parent_container=parent_container,
+            label=":thinking_face: **Thinking...**",
+            expanded=expanded,
         )
+        self._state = LLMThoughtState.THINKING
         self._llm_token_stream = ""
-        self._llm_token_writer: Optional[DeltaGenerator] = None
+        self._llm_token_writer_idx: Optional[int] = None
 
     def _reset_llm_token_stream(self) -> None:
         self._llm_token_stream = ""
-        self._llm_token_writer = None
+        self._llm_token_writer_idx = None
 
     def on_llm_start(self, serialized: dict[str, Any], prompts: list[str]) -> None:
         self._reset_llm_token_stream()
@@ -44,14 +47,9 @@ class LLMThought:
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         # This is only called when the LLM is initialized with `streaming=True`
         self._llm_token_stream += _convert_newlines(token)
-
-        if self._llm_token_writer is None:
-            # Create a new Markdown element for our token stream at the next location
-            # in our container
-            self._llm_token_writer = self._container.markdown(self._llm_token_stream)
-        else:
-            # Update our existing Markdown element with the token stream
-            self._llm_token_writer.markdown(self._llm_token_stream)
+        self._llm_token_writer_idx = self._container.markdown(
+            self._llm_token_stream, index=self._llm_token_writer_idx
+        )
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         # `response` is the concatenation of all the tokens received by the LLM.
@@ -69,7 +67,9 @@ class LLMThought:
         # Called with the name of the tool we're about to run (in `serialized[name]`),
         # and its input. We don't output this, because it's redundant: the LLM will
         # have just printed the name of the tool and its input before calling the tool.
-        pass
+        self._state = LLMThoughtState.RUNNING_TOOL
+        tool_name = serialized["name"]
+        self._container.update(new_label=f"**{tool_name}**: {input_str}")
 
     def on_tool_end(
         self,
@@ -95,6 +95,13 @@ class LLMThought:
         # We don't output anything here, because we'll receive this same data
         # when `on_tool_start` is called immediately after.
         pass
+
+    def finish(self) -> None:
+        """Finish the thought."""
+        if self._state == LLMThoughtState.COMPLETE:
+            return
+        self._state = LLMThoughtState.COMPLETE
+        self._container.update(new_label=f"✅ {self._container.label}")
 
 
 class StreamlitCallbackHandler(BaseCallbackHandler):
@@ -140,11 +147,10 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         llm_prefix: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
-        self._require_current_thought().on_tool_end(
-            output, color, observation_prefix, llm_prefix, **kwargs
-        )
-        # Each thought is comprised of a single tool action, so close our
-        # current thought whenever a tool ends.
+        thought = self._require_current_thought()
+        thought.on_tool_end(output, color, observation_prefix, llm_prefix, **kwargs)
+        thought.finish()
+
         self._current_thought = None
 
     def on_tool_error(
@@ -185,7 +191,6 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
     def on_agent_finish(
         self, finish: AgentFinish, color: Optional[str] = None, **kwargs: Any
     ) -> None:
-        # we already show the output so no need to do anything here
         if "output" in finish.return_values:
             self._container.markdown(finish.return_values["output"])
         else:
