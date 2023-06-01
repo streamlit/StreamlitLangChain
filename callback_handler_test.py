@@ -10,7 +10,7 @@ from streamlit_callback_handler import StreamlitCallbackHandler
 
 RUN_PATH = Path(__file__).parent / "runs" / "leo_streaming.pickle"
 
-streamlit_handler = StreamlitCallbackHandler(st.container())
+streamlit_handler = StreamlitCallbackHandler(st.container(), expand_new_thoughts=True)
 # streamlit_handler = StreamlitDebugCallbackHandler(st.container())
 playback_callbacks(
     [streamlit_handler, StdOutCallbackHandler()], str(RUN_PATH), with_pauses=False

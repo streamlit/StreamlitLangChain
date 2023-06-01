@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from enum import Enum
 from typing import Any, Optional
 
 from langchain.callbacks.base import BaseCallbackHandler
@@ -14,10 +15,21 @@ def _convert_newlines(text: str) -> str:
     return text.replace("\n", "  \n")
 
 
+class LLMThoughtState(Enum):
+    # The LLM is thinking about what to do next. We don't know which tool we'll run.
+    THINKING = "THINKING"
+    # The LLM has decided to run a tool. We don't have results from the tool yet.
+    RUNNING_TOOL = "RUNNING_TOOL"
+    # We have results from the tool.
+    COMPLETE = "COMPLETE"
+
+
 class LLMThought:
-    def __init__(self, parent_container: DeltaGenerator, name: str):
-        self._container = parent_container.expander(
-            f"Thought: {name}...", expanded=True
+    def __init__(self, parent_container: DeltaGenerator, expanded: bool):
+        self._container_cursor = parent_container.empty()
+        self._state = LLMThoughtState.THINKING
+        self._container = self._container_cursor.expander(
+            ":thinking_face: **Thinking...**", expanded=expanded
         )
         self._llm_token_stream = ""
         self._llm_token_writer: Optional[DeltaGenerator] = None
@@ -48,7 +60,7 @@ class LLMThought:
         self._reset_llm_token_stream()
 
     def on_llm_error(self, error: Exception | KeyboardInterrupt, **kwargs: Any) -> None:
-        self._container.write("**LLM encountered an error...**")
+        self._container.markdown("**LLM encountered an error...**")
         self._container.exception(error)
 
     def on_tool_start(
@@ -72,7 +84,7 @@ class LLMThought:
     def on_tool_error(
         self, error: Exception | KeyboardInterrupt, **kwargs: Any
     ) -> None:
-        self._container.write("**Tool encountered an error...**")
+        self._container.markdown("**Tool encountered an error...**")
         self._container.exception(error)
 
     def on_agent_action(
@@ -86,10 +98,11 @@ class LLMThought:
 
 
 class StreamlitCallbackHandler(BaseCallbackHandler):
-    def __init__(self, container: DeltaGenerator):
+    def __init__(self, container: DeltaGenerator, expand_new_thoughts: bool = True):
         """Initialize callback handler."""
         self._container = container
         self._current_thought: Optional[LLMThought] = None
+        self._expand_new_thoughts = expand_new_thoughts
 
     def _require_current_thought(self) -> LLMThought:
         if self._current_thought is None:
@@ -100,7 +113,9 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         self, serialized: dict[str, Any], prompts: list[str], **kwargs: Any
     ) -> None:
         if self._current_thought is None:
-            self._current_thought = LLMThought(self._container, "Unknown")
+            self._current_thought = LLMThought(
+                self._container, self._expand_new_thoughts
+            )
         self._current_thought.on_llm_start(serialized, prompts)
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
