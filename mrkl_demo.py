@@ -1,6 +1,6 @@
-import pickle
 from pathlib import Path
 
+import streamlit as st
 from langchain import (
     LLMMathChain,
     OpenAI,
@@ -8,10 +8,8 @@ from langchain import (
     SQLDatabase,
     SQLDatabaseChain,
 )
-from langchain.agents import initialize_agent, Tool
 from langchain.agents import AgentType
-
-import streamlit as st
+from langchain.agents import initialize_agent, Tool
 
 from capturing_callback_handler import CapturingCallbackHandler
 from streamlit_callback_handler import StreamlitCallbackHandler
@@ -53,6 +51,3 @@ mrkl.run(
     "Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?",
     callbacks=[streamlit_handler, capturing_handler],
 )
-
-# with open("runs/leo_streaming.pickle", "wb") as file:
-#     pickle.dump(capturing_handler.records, file)
