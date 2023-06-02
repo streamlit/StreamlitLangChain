@@ -18,7 +18,8 @@ expand_new_thoughts = st.sidebar.checkbox("Expand New Thoughts", value=True)
 RUN_PATH = Path(__file__).parent / "runs" / selected_run
 
 streamlit_handler = StreamlitCallbackHandler(
-    st.container(), expand_new_thoughts=expand_new_thoughts
+    container=st.container(),
+    expand_new_thoughts=expand_new_thoughts,
 )
 playback_callbacks(
     [streamlit_handler, StdOutCallbackHandler()],
