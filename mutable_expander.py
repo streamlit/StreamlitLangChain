@@ -36,6 +36,11 @@ class MutableExpander:
     def expanded(self) -> bool:
         return self._expanded
 
+    def clear(self) -> None:
+        """Remove the container entirely. A cleared container can't be reused."""
+        self._container = self._parent_cursor.empty()
+        self._children.clear()
+
     def update(
         self, *, new_label: Optional[str] = None, new_expanded: Optional[bool] = None
     ) -> None:
