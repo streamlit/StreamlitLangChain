@@ -47,6 +47,12 @@ class LLMThought:
         self._llm_token_writer_idx: int | None = None
         self._last_tool: ToolRecord | None = None
 
+    def append_copy(self, other: LLMThought) -> None:
+        """Append a copy of another LLMThought's contents to this one."""
+        self._container.append_copy(other._container)
+        self._reset_llm_token_stream()
+        self._last_tool = other._last_tool
+
     @property
     def last_tool(self) -> ToolRecord | None:
         """The last tool executed by this thought"""
@@ -172,7 +178,9 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
     ) -> None:
         tool_name = serialized["name"]
 
-        # If our last thought involved this same tool, "reopen" that last thought
+        # If our last thought involved this same tool, "reopen" that last thought,
+        # and fold this thought's contents into it. Our last thought will then become
+        # our current thought.
         last_thought = self._get_last_thought()
         if (
             last_thought is not None
@@ -180,8 +188,9 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
             and last_thought.last_tool.name == tool_name
         ):
             cur_thought = self._require_current_thought()
-            # append cur_thought's records to last_thought
+            last_thought.append_copy(cur_thought)
             cur_thought.clear()
+
             self._current_thought = last_thought
             self._completed_thoughts.pop()
 
