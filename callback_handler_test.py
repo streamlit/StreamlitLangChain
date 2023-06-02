@@ -8,7 +8,7 @@ from streamlit_callback_handler import StreamlitCallbackHandler
 
 # Build our sidebar
 selected_run = st.sidebar.selectbox(
-    "Run", ["alanis.pickle", "hilton.pickle", "leo.pickle"]
+    "Playback Saved Query", ["hilton.pickle", "alanis.pickle", "leo.pickle"]
 )
 max_pause_time = st.sidebar.number_input(
     "Max Pause Time", min_value=0.0, value=4.0, step=0.5
