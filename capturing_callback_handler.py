@@ -1,4 +1,4 @@
-"""Callback Handler that prints to streamlit."""
+"""Callback Handler captures all callbacks in a session for future offline playback."""
 
 from __future__ import annotations
 
@@ -33,20 +33,30 @@ class CallbackRecord(NamedTuple):
     time_delta: float  # Number of seconds between this record and the previous one
 
 
+def load_records_from_file(path: str) -> list[CallbackRecord]:
+    """Load the list of CallbackRecords from a pickle file at the given path."""
+    with open(path, "rb") as file:
+        records = pickle.load(file)
+
+    if not isinstance(records, list):
+        raise RuntimeError(f"Bad CallbackRecord data in {path}")
+    return records
+
+
 def playback_callbacks(
     handlers: list[BaseCallbackHandler],
     records_or_filename: list[CallbackRecord] | str,
-    with_pauses: bool,
+    max_pause_time: float,
 ) -> None:
     if isinstance(records_or_filename, list):
         records = records_or_filename
     else:
-        with open(records_or_filename, "rb") as file:
-            records: list[CallbackRecord] = pickle.load(file)
+        records = load_records_from_file(records_or_filename)
 
     for record in records:
-        if with_pauses and record.time_delta > 0:
-            time.sleep(record.time_delta)
+        pause_time = min(record.time_delta, max_pause_time)
+        if pause_time > 0:
+            time.sleep(pause_time)
 
         for handler in handlers:
             if record.callback_type == CallbackType.ON_LLM_START:
@@ -82,9 +92,10 @@ class CapturingCallbackHandler(BaseCallbackHandler):
         self._records: list[CallbackRecord] = []
         self._last_time: float | None = None
 
-    @property
-    def records(self) -> list[CallbackRecord]:
-        return self._records
+    def dump_records_to_file(self, path: str) -> None:
+        """Write the list of CallbackRecords to a pickle file at the given path."""
+        with open(path, "wb") as file:
+            pickle.dump(self._records, file)
 
     def _append_record(
         self, type: CallbackType, args: tuple[Any], kwargs: dict[str, Any]
