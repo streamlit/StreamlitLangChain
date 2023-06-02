@@ -8,12 +8,12 @@ from streamlit_callback_handler import StreamlitCallbackHandler
 
 # Build our sidebar
 selected_run = st.sidebar.selectbox(
-    "Playback Saved Query", ["hilton.pickle", "alanis.pickle", "leo.pickle"]
+    "Saved Query", ["hilton.pickle", "alanis.pickle", "leo.pickle"]
 )
 max_pause_time = st.sidebar.number_input(
-    "Max Pause Time", min_value=0.0, value=4.0, step=0.5
+    "Max Pause Time", min_value=0.0, value=2.0, step=1.0
 )
-expand_new_thoughts = st.sidebar.checkbox("Expand New Thoughts", value=True)
+expand_new_thoughts = st.sidebar.checkbox("Expand New Thoughts by Default", value=True)
 
 RUN_PATH = Path(__file__).parent / "runs" / selected_run
 
