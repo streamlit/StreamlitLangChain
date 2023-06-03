@@ -13,13 +13,20 @@ selected_run = st.sidebar.selectbox(
 max_pause_time = st.sidebar.number_input(
     "Max Pause Time", min_value=0.0, value=2.0, step=1.0
 )
+max_completed_thoughts = st.sidebar.number_input(
+    "Max Completed Thoughts",
+    min_value=0,
+    value=3,
+    step=1,
+)
 expand_new_thoughts = st.sidebar.checkbox("Expand New Thoughts by Default", value=True)
 
 RUN_PATH = Path(__file__).parent / "runs" / selected_run
 
 streamlit_handler = StreamlitCallbackHandler(
-    container=st.container(),
+    parent_container=st.container(),
     expand_new_thoughts=expand_new_thoughts,
+    max_completed_thoughts=max_completed_thoughts,
 )
 playback_callbacks(
     [streamlit_handler, StdOutCallbackHandler()],

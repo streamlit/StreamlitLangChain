@@ -19,6 +19,7 @@ def _convert_newlines(text: str) -> str:
 
 CHECKMARK_EMOJI = "✅"
 THINKING_EMOJI = ":thinking_face:"
+HISTORY_EMOJI = ":books:"
 
 
 class LLMThoughtState(Enum):
@@ -120,7 +121,7 @@ class LLMThought:
         # when `on_tool_start` is called immediately after.
         pass
 
-    def finish(self, final_label: str | None = None) -> None:
+    def complete(self, final_label: str | None = None) -> None:
         """Finish the thought."""
         if final_label is None and self._state == LLMThoughtState.RUNNING_TOOL:
             final_label = self._get_tool_label(CHECKMARK_EMOJI, self._last_tool)
@@ -137,30 +138,62 @@ class LLMThought:
 
 
 class StreamlitCallbackHandler(BaseCallbackHandler):
-    def __init__(self, container: DeltaGenerator, expand_new_thoughts: bool = True):
+    def __init__(
+        self,
+        parent_container: DeltaGenerator,
+        expand_new_thoughts: bool,
+        max_completed_thoughts: int,
+    ):
         """Initialize callback handler."""
-        self._container = container
+        self._parent_container = parent_container
+        self._history_parent = parent_container.container()
+        self._history_container: MutableExpander | None = None
         self._current_thought: LLMThought | None = None
         self._completed_thoughts: list[LLMThought] = []
         self._expand_new_thoughts = expand_new_thoughts
+        self._max_completed_thoughts = max_completed_thoughts
 
     def _require_current_thought(self) -> LLMThought:
+        """Return our current LLMThought. Raise an error if we have no current thought."""
         if self._current_thought is None:
             raise RuntimeError("Current LLMThought is unexpectedly None!")
         return self._current_thought
 
-    def _get_last_thought(self) -> LLMThought | None:
-        """Get the most recent completed thought if we have one."""
+    def _get_last_completed_thought(self) -> LLMThought | None:
+        """Return our most recent completed LLMThought, or None if we don't have one."""
         if len(self._completed_thoughts) > 0:
             return self._completed_thoughts[len(self._completed_thoughts) - 1]
         return None
+
+    def _complete_current_thought(self, final_label: str | None = None) -> None:
+        """Complete the current thought, optionally assigning it a new label.
+        Add it to our _completed_thoughts list.
+        """
+        thought = self._require_current_thought()
+        thought.complete(final_label)
+        self._completed_thoughts.append(thought)
+        self._current_thought = None
+
+        # If we have too many completed_thoughts onscreen, move our oldest
+        # one to the "history container"
+        while len(self._completed_thoughts) > self._max_completed_thoughts:
+            if self._history_container is None:
+                self._history_container = MutableExpander(
+                    self._history_parent,
+                    label=f"{HISTORY_EMOJI} **History**",
+                    expanded=False,
+                )
+
+            oldest_thought = self._completed_thoughts.pop(0)
+            self._history_container.append_copy(oldest_thought._container)
+            oldest_thought.clear()
 
     def on_llm_start(
         self, serialized: dict[str, Any], prompts: list[str], **kwargs: Any
     ) -> None:
         if self._current_thought is None:
             self._current_thought = LLMThought(
-                self._container, self._expand_new_thoughts
+                self._parent_container, self._expand_new_thoughts
             )
         self._current_thought.on_llm_start(serialized, prompts)
 
@@ -181,7 +214,7 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         # If our last thought involved this same tool, "reopen" that last thought,
         # and fold this thought's contents into it. Our last thought will then become
         # our current thought.
-        last_thought = self._get_last_thought()
+        last_thought = self._get_last_completed_thought()
         if (
             last_thought is not None
             and last_thought.last_tool is not None
@@ -204,12 +237,10 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         llm_prefix: str | None = None,
         **kwargs: Any,
     ) -> None:
-        thought = self._require_current_thought()
-        thought.on_tool_end(output, color, observation_prefix, llm_prefix, **kwargs)
-        thought.finish()
-
-        self._completed_thoughts.append(thought)
-        self._current_thought = None
+        self._require_current_thought().on_tool_end(
+            output, color, observation_prefix, llm_prefix, **kwargs
+        )
+        self._complete_current_thought()
 
     def on_tool_error(
         self, error: Exception | KeyboardInterrupt, **kwargs: Any
@@ -250,10 +281,9 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         self, finish: AgentFinish, color: str | None = None, **kwargs: Any
     ) -> None:
         if self._current_thought is not None:
-            self._current_thought.finish(f"{CHECKMARK_EMOJI} **Complete!**")
-            self._current_thought = None
+            self._complete_current_thought(f"{CHECKMARK_EMOJI} **Complete!**")
 
         if "output" in finish.return_values:
-            self._container.markdown(finish.return_values["output"])
+            self._parent_container.markdown(finish.return_values["output"])
         else:
-            self._container.write(finish.return_values)
+            self._parent_container.write(finish.return_values)
