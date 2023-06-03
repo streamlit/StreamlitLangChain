@@ -87,8 +87,7 @@ class LLMThought:
         self, serialized: dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
         # Called with the name of the tool we're about to run (in `serialized[name]`),
-        # and its input. We don't output this, because it's redundant: the LLM will
-        # have just printed the name of the tool and its input before calling the tool.
+        # and its input. We change our container's label to be the tool name.
         self._state = LLMThoughtState.RUNNING_TOOL
         tool_name = serialized["name"]
         self._last_tool = ToolRecord(name=tool_name, input_str=input_str)
