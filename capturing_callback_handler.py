@@ -1,5 +1,7 @@
 """Callback Handler captures all callbacks in a session for future offline playback."""
 
+# TODO: remove custom classes (CallbackType, CallbackRecord) so that we have portable pickles
+
 from __future__ import annotations
 
 import pickle
