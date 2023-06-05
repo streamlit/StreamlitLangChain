@@ -55,6 +55,11 @@ class LLMThought:
         self._last_tool = other._last_tool
 
     @property
+    def container(self) -> MutableExpander:
+        """The container we're writing into."""
+        return self._container
+
+    @property
     def last_tool(self) -> ToolRecord | None:
         """The last tool executed by this thought"""
         return self._last_tool
@@ -198,7 +203,8 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
                 )
 
             oldest_thought = self._completed_thoughts.pop(0)
-            self._history_container.append_copy(oldest_thought._container)
+            self._history_container.markdown(oldest_thought.container.label)
+            self._history_container.append_copy(oldest_thought.container)
             oldest_thought.clear()
 
     def on_llm_start(
