@@ -11,7 +11,6 @@ from langchain import (
 from langchain.agents import AgentType
 from langchain.agents import initialize_agent, Tool
 
-from capturing_callback_handler import CapturingCallbackHandler
 from streamlit_callback_handler import StreamlitCallbackHandler
 
 DB_PATH = (Path(__file__).parent / "Chinook.db").absolute()
@@ -39,15 +38,44 @@ tools = [
     ),
 ]
 
-# Streamlit starts here
-streamlit_handler = StreamlitCallbackHandler(st.container())
-capturing_handler = CapturingCallbackHandler()
-
 mrkl = initialize_agent(
     tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
 )
 
-mrkl.run(
-    "Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?",
-    callbacks=[streamlit_handler, capturing_handler],
+# Streamlit starts here!
+
+prefilled = st.sidebar.selectbox(
+    "Sample questions",
+    [
+        "Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?",
+        "What is the full name of the artist who recently released an album called 'The Storm Before the Calm' and "
+        "are they in the FooBar database? If so, what albums of theirs are in the FooBar database?",
+    ],
 )
+
+expand_new_thoughts = st.sidebar.checkbox(
+    "Expand New Thoughts",
+    value=True,
+    help="True if LLM thoughts should be expanded by default",
+)
+
+max_completed_thoughts = st.sidebar.number_input(
+    "Max Completed Thoughts",
+    value=3,
+    min_value=1,
+    help="Max number of completed thoughts to show. When exceeded, older thoughts will be moved into a 'History' expander.",
+)
+
+with st.form(key="form", clear_on_submit=False):
+    mrkl_input = st.text_input("Question", value=prefilled)
+    submit_clicked = st.form_submit_button("Submit Question")
+
+# Create our StreamlitCallbackHandler
+streamlit_handler = StreamlitCallbackHandler(
+    parent_container=st.container(),
+    expand_new_thoughts=expand_new_thoughts,
+    max_completed_thoughts=3,
+)
+
+if submit_clicked:
+    mrkl.run(mrkl_input, callbacks=[streamlit_handler])
