@@ -22,6 +22,21 @@ class MutableExpander:
     """An expander that can be renamed and dynamically expanded/collapsed."""
 
     def __init__(self, parent_container: DeltaGenerator, label: str, expanded: bool):
+        """Create a new MutableExpander.
+
+        Parameters
+        ----------
+        parent_container
+            The `st.container` that the expander will be created inside.
+
+            The expander transparently deletes and recreates its underlying `st.expander`
+            instance when its label changes, and it uses `parent_container` to ensure
+            it recreates this underlying expander in the same location onscreen.
+        label
+            The expander's initial label.
+        expanded
+            The expander's initial `expanded` value.
+        """
         self._label = label
         self._expanded = expanded
         self._parent_cursor = parent_container.empty()
