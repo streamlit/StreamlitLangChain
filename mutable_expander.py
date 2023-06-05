@@ -30,14 +30,16 @@ class MutableExpander:
 
     @property
     def label(self) -> str:
+        """The expander's label string."""
         return self._label
 
     @property
     def expanded(self) -> bool:
+        """True if the expander was created with `expanded=True`."""
         return self._expanded
 
     def clear(self) -> None:
-        """Remove the container entirely. A cleared container can't be reused."""
+        """Remove the container and its contents entirely. A cleared container can't be reused."""
         self._container = self._parent_cursor.empty()
         self._child_records.clear()
 
@@ -79,6 +81,7 @@ class MutableExpander:
         help: str | None = None,
         index: int | None = None,
     ) -> int:
+        """Add a Markdown element to the container and return its index."""
         kwargs = {"body": body, "unsafe_allow_html": unsafe_allow_html, "help": help}
 
         new_dg = self._get_dg(index).markdown(**kwargs)
@@ -86,6 +89,7 @@ class MutableExpander:
         return self._add_record(record, index)
 
     def exception(self, exception: BaseException, *, index: int | None = None) -> int:
+        """Add an Exception element to the container and return its index."""
         kwargs = {"exception": exception}
         new_dg = self._get_dg(index).exception(**kwargs)
         record = ChildRecord(ChildType.EXCEPTION, kwargs, new_dg)

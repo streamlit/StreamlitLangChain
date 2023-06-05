@@ -143,7 +143,21 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         expand_new_thoughts: bool,
         max_completed_thoughts: int,
     ):
-        """Initialize callback handler."""
+        """Create a StreamlitCallbackHandler instance.
+
+        Parameters
+        ----------
+        parent_container
+            The `st.container` that will contain all the Streamlit elements that the
+            Handler creates.
+        expand_new_thoughts
+            Each LLM "thought" gets its own `st.expander`. This param controls whether that
+            expander is expanded by default.
+        max_completed_thoughts
+            The max number of completed LLM thought expanders to show at once. When this
+            threshold is reached, a new thought will cause the oldest thought to be
+            collapsed into a "History" expander.
+        """
         self._parent_container = parent_container
         self._history_parent = parent_container.container()
         self._history_container: MutableExpander | None = None
