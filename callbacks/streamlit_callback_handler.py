@@ -9,7 +9,7 @@ from langchain.callbacks.base import BaseCallbackHandler
 from langchain.schema import AgentAction, AgentFinish, LLMResult
 from streamlit.delta_generator import DeltaGenerator
 
-from mutable_expander import MutableExpander
+from callbacks.mutable_expander import MutableExpander
 
 
 def _convert_newlines(text: str) -> str:

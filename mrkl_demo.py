@@ -11,7 +11,7 @@ from langchain import (
 from langchain.agents import AgentType
 from langchain.agents import initialize_agent, Tool
 
-from streamlit_callback_handler import StreamlitCallbackHandler
+from callbacks import StreamlitCallbackHandler
 
 DB_PATH = (Path(__file__).parent / "Chinook.db").absolute()
 
