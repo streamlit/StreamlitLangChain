@@ -1,6 +1,6 @@
 repos:
   -   repo: https://github.com/pre-commit/pre-commit-hooks
-      rev: v2.3.0
+      rev: v4.4.0
       hooks:
         -   id: check-yaml
         -   id: end-of-file-fixer
@@ -14,3 +14,8 @@ repos:
           # pre-commit's default_language_version, see
           # https://pre-commit.com/#top_level-default_language_version
           language_version: python3.9
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: 'v1.3.0'  # Use the sha / tag you want to point at
+    hooks:
+      - id: mypy
+        args: [--strict]
