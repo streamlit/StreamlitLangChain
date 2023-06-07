@@ -113,34 +113,13 @@ with st.form(key="form", clear_on_submit=False):
     mrkl_input = st.text_input("Question", value=prefilled)
     submit_clicked = st.form_submit_button("Submit Question")
 
-
-# A hack to "clear" the previous result when submitting a new prompt. This avoids
-# the "previous run's text is grayed-out but visible during rerun" Streamlit behavior.
-class DirtyState:
-    NOT_DIRTY = "NOT_DIRTY"
-    DIRTY = "DIRTY"
-    UNHANDLED_SUBMIT = "UNHANDLED_SUBMIT"
-
-
-def get_dirty_state() -> str:
-    return st.session_state.get("dirty_state", DirtyState.NOT_DIRTY)
-
-
-def set_dirty_state(state: str) -> None:
-    st.session_state["dirty_state"] = state
-
-
+# A hack to "clear" the previous result when submitting a new prompt.
+from clear_results import setup_clear_state, is_unhandled_submit, set_dirty
 results_container = st.empty()
+setup_clear_state(submit_clicked)
 
-if get_dirty_state() == DirtyState.DIRTY:
-    if submit_clicked:
-        set_dirty_state(DirtyState.UNHANDLED_SUBMIT)
-        st.experimental_rerun()
-    else:
-        set_dirty_state(DirtyState.NOT_DIRTY)
-
-if submit_clicked or get_dirty_state() == DirtyState.UNHANDLED_SUBMIT:
-    set_dirty_state(DirtyState.DIRTY)
+if submit_clicked or is_unhandled_submit():
+    set_dirty()
 
     # Create our StreamlitCallbackHandler
     streamlit_handler = StreamlitCallbackHandler(
