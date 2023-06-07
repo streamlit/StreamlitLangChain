@@ -108,7 +108,6 @@ if not enable_custom:
     "Ask a sample question, or enter API Keys in the sidebar to ask your own custom questions."
 prefilled = st.selectbox("Sample questions", sorted(SAVED_SESSIONS.keys()))
 
-#with st.form(key="form", clear_on_submit=False):
 if enable_custom:
     mrkl_input = st.text_input("Ask your own question", value=prefilled)
 else:
