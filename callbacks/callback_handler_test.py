@@ -3,8 +3,8 @@ from pathlib import Path
 import streamlit as st
 from langchain.callbacks import StdOutCallbackHandler
 
-from capturing_callback_handler import playback_callbacks
-from streamlit_callback_handler import StreamlitCallbackHandler
+from callbacks.capturing_callback_handler import playback_callbacks
+from callbacks.streamlit_callback_handler import StreamlitCallbackHandler
 
 # Build our sidebar
 selected_run = st.sidebar.selectbox(
