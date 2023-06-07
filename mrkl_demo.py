@@ -15,9 +15,9 @@ from callbacks import StreamlitCallbackHandler
 
 DB_PATH = (Path(__file__).parent / "Chinook.db").absolute()
 
-llm = OpenAI(temperature=0, openai_api_key=st.secrets["openai_api_key"], streaming=True)
-search = SerpAPIWrapper(serpapi_api_key=st.secrets["serpapi_api_key"])
-llm_math_chain = LLMMathChain(llm=llm, verbose=True)
+llm = OpenAI(temperature=0, openai_api_key=st.secrets["openai_api_key"], streaming=True)  # type: ignore
+search = SerpAPIWrapper(serpapi_api_key=st.secrets["serpapi_api_key"])  # type: ignore
+llm_math_chain = LLMMathChain(llm=llm, verbose=True)  # type: ignore
 db = SQLDatabase.from_uri(f"sqlite:///{DB_PATH}")
 db_chain = SQLDatabaseChain.from_llm(llm, db, verbose=True)
 tools = [

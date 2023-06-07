@@ -98,19 +98,18 @@ class MutableExpander:
     ) -> int:
         """Add a Markdown element to the container and return its index."""
         kwargs = {"body": body, "unsafe_allow_html": unsafe_allow_html, "help": help}
-
-        new_dg = self._get_dg(index).markdown(**kwargs)
+        new_dg = self._get_dg(index).markdown(**kwargs)  # type: ignore
         record = ChildRecord(ChildType.MARKDOWN, kwargs, new_dg)
         return self._add_record(record, index)
 
     def exception(self, exception: BaseException, *, index: int | None = None) -> int:
         """Add an Exception element to the container and return its index."""
         kwargs = {"exception": exception}
-        new_dg = self._get_dg(index).exception(**kwargs)
+        new_dg = self._get_dg(index).exception(**kwargs)  # type: ignore
         record = ChildRecord(ChildType.EXCEPTION, kwargs, new_dg)
         return self._add_record(record, index)
 
-    def _create_child(self, type: ChildType, kwargs: dict[str]) -> None:
+    def _create_child(self, type: ChildType, kwargs: dict[str, Any]) -> None:
         """Create a new child with the given params"""
         if type == ChildType.MARKDOWN:
             self.markdown(**kwargs)
@@ -119,7 +118,7 @@ class MutableExpander:
         else:
             raise RuntimeError(f"Unexpected child type {type}")
 
-    def _add_record(self, record: ChildRecord, index: Optional[int]) -> int:
+    def _add_record(self, record: ChildRecord, index: int | None) -> int:
         """Add a ChildRecord to self._children. If `index` is specified, replace
         the existing record at that index. Otherwise, append the record to the
         end of the list.
@@ -135,7 +134,7 @@ class MutableExpander:
         self._child_records.append(record)
         return len(self._child_records) - 1
 
-    def _get_dg(self, index: Optional[int]) -> DeltaGenerator:
+    def _get_dg(self, index: int | None) -> DeltaGenerator:
         if index is not None:
             # Existing index: reuse child's DeltaGenerator
             assert 0 <= index < len(self._child_records), f"Bad index: {index}"
