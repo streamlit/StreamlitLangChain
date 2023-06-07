@@ -21,7 +21,7 @@ max_completed_thoughts = st.sidebar.number_input(
 )
 expand_new_thoughts = st.sidebar.checkbox("Expand New Thoughts by Default", value=True)
 
-RUN_PATH = Path(__file__).parent / "runs" / str(selected_run)
+RUN_PATH = Path(__file__).parent.parent / "runs" / str(selected_run)
 
 streamlit_handler = StreamlitCallbackHandler(
     parent_container=st.container(),
