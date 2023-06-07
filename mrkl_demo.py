@@ -23,30 +23,25 @@ placing the .db file in the same directory as this app.
 
 """
 
-# Setup questions and credentials in Streamlit
-
-prefilled = st.sidebar.selectbox("Sample questions", sorted(SAVED_SESSIONS.keys()))
-
-password = st.sidebar.text_input(
-    "Demo Password",
+# Setup credentials in Streamlit
+user_openai_api_key = st.sidebar.text_input(
+    "OpenAI API Key",
     type="password",
-    help="Password to use the existing API Keys for demo purposes.",
+    help="Set this to run your own custom questions.")
+user_serpapi_api_key = st.sidebar.text_input(
+    "SerpAPI API Key",
+    type="password",
+    help="Set this to run your own custom questions. Get yours at https://serpapi.com/manage-api-key.",
 )
 
-if password == st.secrets.password:
+if user_openai_api_key and user_serpapi_api_key:
+    openai_api_key = user_openai_api_key
+    serpapi_api_key = user_serpapi_api_key
+    enable_custom = True
+else:
     openai_api_key = st.secrets["openai_api_key"]
     serpapi_api_key = st.secrets["serpapi_api_key"]
-else:
-    openai_api_key = st.sidebar.text_input("OpenAI API Key", type="password")
-    serpapi_api_key = st.sidebar.text_input(
-        "SerpAPI API Key",
-        type="password",
-        help="SerpAPI Key for Search. Get yours at https://serpapi.com/manage-api-key",
-    )
-
-if not (openai_api_key and serpapi_api_key):
-    st.warning("Enter the Demo Password or your API Keys to see the demo", icon="👈")
-    st.stop()
+    enable_custom = False
 
 with st.expander("👀 View the source code"), st.echo():
     # LangChain imports
@@ -109,9 +104,16 @@ max_completed_thoughts = st.sidebar.number_input(
     help="Max number of completed thoughts to show. When exceeded, older thoughts will be moved into a 'History' expander.",
 )
 
-with st.form(key="form", clear_on_submit=False):
-    mrkl_input = st.text_input("Question", value=prefilled)
-    submit_clicked = st.form_submit_button("Submit Question")
+if not enable_custom:
+    "Ask a sample question, or enter API Keys in the sidebar to ask your own custom questions."
+prefilled = st.selectbox("Sample questions", sorted(SAVED_SESSIONS.keys()))
+
+#with st.form(key="form", clear_on_submit=False):
+if enable_custom:
+    mrkl_input = st.text_input("Ask your own question", value=prefilled)
+else:
+    mrkl_input = prefilled
+submit_clicked = st.button("Submit Question")
 
 results_container = st.empty()
 
