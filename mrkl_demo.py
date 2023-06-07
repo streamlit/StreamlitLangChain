@@ -124,7 +124,7 @@ if with_clear_container(submit_clicked):
     streamlit_handler = StreamlitCallbackHandler(
         parent_container=results_container.container(),
         expand_new_thoughts=expand_new_thoughts,
-        max_completed_thoughts=3,
+        max_completed_thoughts=max_completed_thoughts,
     )
 
     # If we've saved this question, play it back instead of actually running LangChain
