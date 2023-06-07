@@ -56,7 +56,7 @@ class StreamlitDebugCallbackHandler(BaseCallbackHandler):
         self._close_text_element()
 
     def _print_text(self, text: str, color: str | None = None, end: str = "\n") -> None:
-        if end is not "\n":
+        if end != "\n":
             text += end
 
         text = _colorize(text, color)
@@ -68,7 +68,7 @@ class StreamlitDebugCallbackHandler(BaseCallbackHandler):
         else:
             self._text_element = self._container.markdown(self._text)
 
-        if end is "\n":
+        if end == "\n":
             self._close_text_element()
 
     def _close_text_element(self) -> None:
