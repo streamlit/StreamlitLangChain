@@ -113,14 +113,12 @@ with st.form(key="form", clear_on_submit=False):
     mrkl_input = st.text_input("Question", value=prefilled)
     submit_clicked = st.form_submit_button("Submit Question")
 
-# A hack to "clear" the previous result when submitting a new prompt.
-from clear_results import setup_clear_state, is_unhandled_submit, set_dirty
 results_container = st.empty()
-setup_clear_state(submit_clicked)
 
-if submit_clicked or is_unhandled_submit():
-    set_dirty()
+# A hack to "clear" the previous result when submitting a new prompt.
+from clear_results import with_clear_container
 
+if with_clear_container(submit_clicked):
     # Create our StreamlitCallbackHandler
     streamlit_handler = StreamlitCallbackHandler(
         parent_container=results_container.container(),

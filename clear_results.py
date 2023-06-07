@@ -15,16 +15,17 @@ def get_dirty_state() -> str:
 def set_dirty_state(state: str) -> None:
     st.session_state["dirty_state"] = state
 
-def setup_clear_state(submit_clicked):
+
+def with_clear_container(submit_clicked):
     if get_dirty_state() == DirtyState.DIRTY:
         if submit_clicked:
             set_dirty_state(DirtyState.UNHANDLED_SUBMIT)
             st.experimental_rerun()
         else:
             set_dirty_state(DirtyState.NOT_DIRTY)
-
-def is_unhandled_submit():
-    return get_dirty_state() == DirtyState.UNHANDLED_SUBMIT
-
-def set_dirty():
-    set_dirty_state(DirtyState.DIRTY)
+    
+    if submit_clicked or get_dirty_state() == DirtyState.UNHANDLED_SUBMIT:
+        set_dirty_state(DirtyState.DIRTY)
+        return True
+    
+    return False
