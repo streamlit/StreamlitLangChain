@@ -11,9 +11,16 @@ from langchain import (
 from langchain.agents import AgentType
 from langchain.agents import initialize_agent, Tool
 
-from callbacks import StreamlitCallbackHandler
+from callbacks import StreamlitCallbackHandler, playback_callbacks
 
 DB_PATH = (Path(__file__).parent / "Chinook.db").absolute()
+
+SAVED_SESSIONS = {
+    "Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?": "leo.pickle",
+    "What is the full name of the artist who recently released an album called "
+    "'The Storm Before the Calm' and are they in the FooBar database? If so, what albums of theirs "
+    "are in the FooBar database?": "alanis.pickle",
+}
 
 llm = OpenAI(temperature=0, openai_api_key=st.secrets["openai_api_key"], streaming=True)  # type: ignore
 search = SerpAPIWrapper(serpapi_api_key=st.secrets["serpapi_api_key"])  # type: ignore
@@ -44,14 +51,7 @@ mrkl = initialize_agent(
 
 # Streamlit starts here!
 
-prefilled = st.sidebar.selectbox(
-    "Sample questions",
-    [
-        "Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?",
-        "What is the full name of the artist who recently released an album called 'The Storm Before the Calm' and "
-        "are they in the FooBar database? If so, what albums of theirs are in the FooBar database?",
-    ],
-)
+prefilled = st.sidebar.selectbox("Sample questions", sorted(SAVED_SESSIONS.keys()))
 
 expand_new_thoughts = st.sidebar.checkbox(
     "Expand New Thoughts",
@@ -78,4 +78,12 @@ streamlit_handler = StreamlitCallbackHandler(
 )
 
 if submit_clicked:
-    mrkl.run(mrkl_input, callbacks=[streamlit_handler])
+    # If we've saved this question, play it back instead of actually running LangChain
+    # (so that we don't exhaust our API calls unnecessarily)
+    if mrkl_input in SAVED_SESSIONS:
+        session_name = SAVED_SESSIONS[mrkl_input]
+        session_path = Path(__file__).parent / "runs" / session_name
+        print(f"Playing saved session: {session_path}")
+        playback_callbacks([streamlit_handler], str(session_path), max_pause_time=3)
+    else:
+        mrkl.run(mrkl_input, callbacks=[streamlit_handler])
