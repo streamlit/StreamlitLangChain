@@ -1,11 +1,15 @@
 from pathlib import Path
 
 import streamlit as st
-st.set_page_config(
-    page_title="MRKL",
-    page_icon="🦜",
-    layout="wide"
-)
+
+SAVED_SESSIONS = {
+    "Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?": "leo.pickle",
+    "What is the full name of the artist who recently released an album called "
+    "'The Storm Before the Calm' and are they in the FooBar database? If so, what albums of theirs "
+    "are in the FooBar database?": "alanis.pickle",
+}
+
+st.set_page_config(page_title="MRKL", page_icon="🦜", layout="wide")
 
 "# 🦜🔗 MRKL"
 
@@ -21,20 +25,12 @@ placing the .db file in the same directory as this app.
 
 # Setup questions and credentials in Streamlit
 
-prefilled = st.sidebar.selectbox(
-    "Sample questions",
-    [
-        "Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?",
-        "What is the full name of the artist who recently released an album called 'The Storm Before the Calm' and "
-        "are they in the FooBar database? If so, what albums of theirs are in the FooBar database?",
-        "Which artist has the most albums listed in the FooBar database? Did they win a Grammy for any of those?"
-    ],
-)
+prefilled = st.sidebar.selectbox("Sample questions", sorted(SAVED_SESSIONS.keys()))
 
 password = st.sidebar.text_input(
     "Demo Password",
     type="password",
-    help="Password to use the existing API Keys for demo purposes."
+    help="Password to use the existing API Keys for demo purposes.",
 )
 
 if password == st.secrets.password:
@@ -45,7 +41,7 @@ else:
     serpapi_api_key = st.sidebar.text_input(
         "SerpAPI API Key",
         type="password",
-        help="SerpAPI Key for Search. Get yours at https://serpapi.com/manage-api-key"
+        help="SerpAPI Key for Search. Get yours at https://serpapi.com/manage-api-key",
     )
 
 if not (openai_api_key and serpapi_api_key):
@@ -64,7 +60,7 @@ with st.expander("👀 View the source code"), st.echo():
     from langchain.agents import AgentType
     from langchain.agents import initialize_agent, Tool
 
-    from callbacks import StreamlitCallbackHandler
+    from callbacks import StreamlitCallbackHandler, playback_callbacks
 
     # Tools setup
     DB_PATH = (Path(__file__).parent / "Chinook.db").absolute()
@@ -125,4 +121,12 @@ streamlit_handler = StreamlitCallbackHandler(
 )
 
 if submit_clicked:
-    mrkl.run(mrkl_input, callbacks=[streamlit_handler])
+    # If we've saved this question, play it back instead of actually running LangChain
+    # (so that we don't exhaust our API calls unnecessarily)
+    if mrkl_input in SAVED_SESSIONS:
+        session_name = SAVED_SESSIONS[mrkl_input]
+        session_path = Path(__file__).parent / "runs" / session_name
+        print(f"Playing saved session: {session_path}")
+        playback_callbacks([streamlit_handler], str(session_path), max_pause_time=3)
+    else:
+        mrkl.run(mrkl_input, callbacks=[streamlit_handler])

@@ -13,6 +13,7 @@ watchdog = "*"
 [dev-packages]
 black = "*"
 pre-commit = "*"
+mypy = "*"
 
 [requires]
 python_version = "3.11"
