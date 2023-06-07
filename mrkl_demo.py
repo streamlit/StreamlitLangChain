@@ -113,14 +113,42 @@ with st.form(key="form", clear_on_submit=False):
     mrkl_input = st.text_input("Question", value=prefilled)
     submit_clicked = st.form_submit_button("Submit Question")
 
-# Create our StreamlitCallbackHandler
-streamlit_handler = StreamlitCallbackHandler(
-    parent_container=st.container(),
-    expand_new_thoughts=expand_new_thoughts,
-    max_completed_thoughts=3,
-)
 
-if submit_clicked:
+# A hack to "clear" the previous result when submitting a new prompt. This avoids
+# the "previous run's text is grayed-out but visible during rerun" Streamlit behavior.
+class DirtyState:
+    NOT_DIRTY = "NOT_DIRTY"
+    DIRTY = "DIRTY"
+    UNHANDLED_SUBMIT = "UNHANDLED_SUBMIT"
+
+
+def get_dirty_state() -> str:
+    return st.session_state.get("dirty_state", DirtyState.NOT_DIRTY)
+
+
+def set_dirty_state(state: str) -> None:
+    st.session_state["dirty_state"] = state
+
+
+results_container = st.empty()
+
+if get_dirty_state() == DirtyState.DIRTY:
+    if submit_clicked:
+        set_dirty_state(DirtyState.UNHANDLED_SUBMIT)
+        st.experimental_rerun()
+    else:
+        set_dirty_state(DirtyState.NOT_DIRTY)
+
+if submit_clicked or get_dirty_state() == DirtyState.UNHANDLED_SUBMIT:
+    set_dirty_state(DirtyState.DIRTY)
+
+    # Create our StreamlitCallbackHandler
+    streamlit_handler = StreamlitCallbackHandler(
+        parent_container=results_container.container(),
+        expand_new_thoughts=expand_new_thoughts,
+        max_completed_thoughts=3,
+    )
+
     # If we've saved this question, play it back instead of actually running LangChain
     # (so that we don't exhaust our API calls unnecessarily)
     if mrkl_input in SAVED_SESSIONS:
