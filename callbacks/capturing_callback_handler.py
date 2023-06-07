@@ -1,18 +1,17 @@
 """Callback Handler captures all callbacks in a session for future offline playback."""
 
-# TODO: remove custom classes (CallbackType, CallbackRecord) so that we have portable pickles
-
 from __future__ import annotations
 
 import pickle
 import time
-from enum import Enum
-from typing import Any, NamedTuple
+from typing import Any, TypedDict
 
 from langchain.callbacks.base import BaseCallbackHandler
 
 
-class CallbackType(Enum):
+# This is intentionally not an enum so that we avoid serializing a
+# custom class with pickle.
+class CallbackType:
     ON_LLM_START = "on_llm_start"
     ON_LLM_NEW_TOKEN = "on_llm_new_token"
     ON_LLM_END = "on_llm_end"
@@ -28,9 +27,11 @@ class CallbackType(Enum):
     ON_AGENT_FINISH = "on_agent_finish"
 
 
-class CallbackRecord(NamedTuple):
-    callback_type: CallbackType
-    args: tuple[Any]
+# We use TypedDict, rather than NamedTuple, so that we avoid serializing a
+# custom class with pickle. All of this class's members should be basic Python types.
+class CallbackRecord(TypedDict):
+    callback_type: str
+    args: tuple[Any, ...]
     kwargs: dict[str, Any]
     time_delta: float  # Number of seconds between this record and the previous one
 
@@ -56,41 +57,41 @@ def playback_callbacks(
         records = load_records_from_file(records_or_filename)
 
     for record in records:
-        pause_time = min(record.time_delta, max_pause_time)
+        pause_time = min(record["time_delta"], max_pause_time)
         if pause_time > 0:
             time.sleep(pause_time)
 
         for handler in handlers:
-            if record.callback_type == CallbackType.ON_LLM_START:
-                handler.on_llm_start(*record.args, **record.kwargs)
-            elif record.callback_type == CallbackType.ON_LLM_NEW_TOKEN:
-                handler.on_llm_new_token(*record.args, **record.kwargs)
-            elif record.callback_type == CallbackType.ON_LLM_END:
-                handler.on_llm_end(*record.args, **record.kwargs)
-            elif record.callback_type == CallbackType.ON_LLM_ERROR:
-                handler.on_llm_error(*record.args, **record.kwargs)
-            elif record.callback_type == CallbackType.ON_TOOL_START:
-                handler.on_tool_start(*record.args, **record.kwargs)
-            elif record.callback_type == CallbackType.ON_TOOL_END:
-                handler.on_tool_end(*record.args, **record.kwargs)
-            elif record.callback_type == CallbackType.ON_TOOL_ERROR:
-                handler.on_tool_error(*record.args, **record.kwargs)
-            elif record.callback_type == CallbackType.ON_TEXT:
-                handler.on_text(*record.args, **record.kwargs)
-            elif record.callback_type == CallbackType.ON_CHAIN_START:
-                handler.on_chain_start(*record.args, **record.kwargs)
-            elif record.callback_type == CallbackType.ON_CHAIN_END:
-                handler.on_chain_end(*record.args, **record.kwargs)
-            elif record.callback_type == CallbackType.ON_CHAIN_ERROR:
-                handler.on_chain_error(*record.args, **record.kwargs)
-            elif record.callback_type == CallbackType.ON_AGENT_ACTION:
-                handler.on_agent_action(*record.args, **record.kwargs)
-            elif record.callback_type == CallbackType.ON_AGENT_FINISH:
-                handler.on_agent_finish(*record.args, **record.kwargs)
+            if record["callback_type"] == CallbackType.ON_LLM_START:
+                handler.on_llm_start(*record["args"], **record["kwargs"])
+            elif record["callback_type"] == CallbackType.ON_LLM_NEW_TOKEN:
+                handler.on_llm_new_token(*record["args"], **record["kwargs"])
+            elif record["callback_type"] == CallbackType.ON_LLM_END:
+                handler.on_llm_end(*record["args"], **record["kwargs"])
+            elif record["callback_type"] == CallbackType.ON_LLM_ERROR:
+                handler.on_llm_error(*record["args"], **record["kwargs"])
+            elif record["callback_type"] == CallbackType.ON_TOOL_START:
+                handler.on_tool_start(*record["args"], **record["kwargs"])
+            elif record["callback_type"] == CallbackType.ON_TOOL_END:
+                handler.on_tool_end(*record["args"], **record["kwargs"])
+            elif record["callback_type"] == CallbackType.ON_TOOL_ERROR:
+                handler.on_tool_error(*record["args"], **record["kwargs"])
+            elif record["callback_type"] == CallbackType.ON_TEXT:
+                handler.on_text(*record["args"], **record["kwargs"])
+            elif record["callback_type"] == CallbackType.ON_CHAIN_START:
+                handler.on_chain_start(*record["args"], **record["kwargs"])
+            elif record["callback_type"] == CallbackType.ON_CHAIN_END:
+                handler.on_chain_end(*record["args"], **record["kwargs"])
+            elif record["callback_type"] == CallbackType.ON_CHAIN_ERROR:
+                handler.on_chain_error(*record["args"], **record["kwargs"])
+            elif record["callback_type"] == CallbackType.ON_AGENT_ACTION:
+                handler.on_agent_action(*record["args"], **record["kwargs"])
+            elif record["callback_type"] == CallbackType.ON_AGENT_FINISH:
+                handler.on_agent_finish(*record["args"], **record["kwargs"])
 
 
 class CapturingCallbackHandler(BaseCallbackHandler):
-    def __init__(self):
+    def __init__(self) -> None:
         self._records: list[CallbackRecord] = []
         self._last_time: float | None = None
 
@@ -100,12 +101,16 @@ class CapturingCallbackHandler(BaseCallbackHandler):
             pickle.dump(self._records, file)
 
     def _append_record(
-        self, type: CallbackType, args: tuple[Any], kwargs: dict[str, Any]
+        self, type: str, args: tuple[Any, ...], kwargs: dict[str, Any]
     ) -> None:
         time_now = time.time()
         time_delta = time_now - self._last_time if self._last_time is not None else 0
         self._last_time = time_now
-        self._records.append(CallbackRecord(type, args, kwargs, time_delta))
+        self._records.append(
+            CallbackRecord(
+                callback_type=type, args=args, kwargs=kwargs, time_delta=time_delta
+            )
+        )
 
     def on_llm_start(self, *args: Any, **kwargs: Any) -> None:
         self._append_record(CallbackType.ON_LLM_START, args, kwargs)
