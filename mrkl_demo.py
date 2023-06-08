@@ -2,20 +2,13 @@ from pathlib import Path
 
 import streamlit as st
 
-SAVED_SESSIONS = {
-    "Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?": "leo.pickle",
-    "What is the full name of the artist who recently released an album called "
-    "'The Storm Before the Calm' and are they in the FooBar database? If so, what albums of theirs "
-    "are in the FooBar database?": "alanis.pickle",
-}
-
 st.set_page_config(page_title="MRKL", page_icon="🦜", layout="wide")
 
 "# 🦜🔗 MRKL"
 
 """
-This Streamlit app showcases using a LangChain agent to replicate the MRKL chain.
-Some sample questions are provided in the sidebar, or you can try entering your own!
+This Streamlit app showcases a LangChain agent that replicates the
+[MRKL chain](https://arxiv.org/abs/2205.00445).
 
 This uses the [example Chinook database](https://github.com/lerocha/chinook-database).
 To set it up follow the instructions [here](https://database.guide/2-sample-databases-sqlite/),
@@ -43,7 +36,7 @@ else:
     serpapi_api_key = st.secrets["serpapi_api_key"]
     enable_custom = False
 
-with st.expander("👀 View the source code"), st.echo():
+with st.expander("👉 View the source code"), st.echo():
     # LangChain imports
     from langchain import (
         LLMMathChain,
@@ -104,8 +97,15 @@ max_completed_thoughts = st.sidebar.number_input(
     help="Max number of completed thoughts to show. When exceeded, older thoughts will be moved into a 'History' expander.",
 )
 
+SAVED_SESSIONS = {
+    "Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?": "leo.pickle",
+    "What is the full name of the artist who recently released an album called "
+    "'The Storm Before the Calm' and are they in the FooBar database? If so, what albums of theirs "
+    "are in the FooBar database?": "alanis.pickle",
+}
+
 if not enable_custom:
-    "Ask a sample question, or enter API Keys in the sidebar to ask your own custom questions."
+    "Ask one of the sample questions, or enter your API Keys in the sidebar to ask your own custom questions."
 prefilled = st.selectbox("Sample questions", sorted(SAVED_SESSIONS.keys()))
 
 if enable_custom:
@@ -114,6 +114,7 @@ else:
     mrkl_input = prefilled
 submit_clicked = st.button("Submit Question")
 
+question_container = st.empty()
 results_container = st.empty()
 
 # A hack to "clear" the previous result when submitting a new prompt.
@@ -126,6 +127,8 @@ if with_clear_container(submit_clicked):
         expand_new_thoughts=expand_new_thoughts,
         max_completed_thoughts=max_completed_thoughts,
     )
+
+    question_container.write(f"**Question: {mrkl_input}**")
 
     # If we've saved this question, play it back instead of actually running LangChain
     # (so that we don't exhaust our API calls unnecessarily)
