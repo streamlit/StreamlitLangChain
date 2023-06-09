@@ -155,7 +155,7 @@ class LLMThought:
         if len(tool.input_str) > idx:
             input = input + "..."
         input = input.replace("\n", " ")
-        label = f"{emoji} **{name}:** `{input}`"
+        label = f"{emoji} **{name}:** {input}"
         return label
 
 
