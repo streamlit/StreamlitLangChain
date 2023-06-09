@@ -90,6 +90,12 @@ expand_new_thoughts = st.sidebar.checkbox(
     help="True if LLM thoughts should be expanded by default",
 )
 
+contract_on_done = st.sidebar.checkbox(
+    "Contract thoughts after complete",
+    value=True,
+    help="True if LLM thoughts should be contracted when they complete",
+)
+
 max_completed_thoughts = st.sidebar.number_input(
     "Max Completed Thoughts",
     value=3,
@@ -104,15 +110,24 @@ SAVED_SESSIONS = {
     "are in the FooBar database?": "alanis.pickle",
 }
 
-if not enable_custom:
-    "Ask one of the sample questions, or enter your API Keys in the sidebar to ask your own custom questions."
-prefilled = st.selectbox("Sample questions", sorted(SAVED_SESSIONS.keys()))
+key = "input"
+shadow_key = "_input"
 
-if enable_custom:
-    mrkl_input = st.text_input("Ask your own question", value=prefilled)
-else:
-    mrkl_input = prefilled
-submit_clicked = st.button("Submit Question")
+if key in st.session_state and shadow_key not in st.session_state:
+    st.session_state[shadow_key] = st.session_state[key]
+
+with st.form(key="form"):
+    if not enable_custom:
+        "Ask one of the sample questions, or enter your API Keys in the sidebar to ask your own custom questions."
+    prefilled = st.selectbox("Sample questions", sorted(SAVED_SESSIONS.keys()))
+    mrkl_input = ""
+
+    if enable_custom:
+        mrkl_input = st.text_input("Or, ask your own question", key=shadow_key)
+        st.session_state[key] = mrkl_input
+    if not mrkl_input:
+        mrkl_input = prefilled
+    submit_clicked = st.form_submit_button("Submit Question")
 
 question_container = st.empty()
 results_container = st.empty()
@@ -122,13 +137,16 @@ from clear_results import with_clear_container
 
 if with_clear_container(submit_clicked):
     # Create our StreamlitCallbackHandler
+    res = results_container.container()
     streamlit_handler = StreamlitCallbackHandler(
-        parent_container=results_container.container(),
-        expand_new_thoughts=expand_new_thoughts,
+        parent_container=res,
         max_completed_thoughts=max_completed_thoughts,
+        expand_new_thoughts=expand_new_thoughts,
+        contract_on_done=contract_on_done,
+        update_tool_label=True,
     )
 
-    question_container.write(f"**Question: {mrkl_input}**")
+    question_container.write(f"**Question:** {mrkl_input}")
 
     # If we've saved this question, play it back instead of actually running LangChain
     # (so that we don't exhaust our API calls unnecessarily)
@@ -136,6 +154,8 @@ if with_clear_container(submit_clicked):
         session_name = SAVED_SESSIONS[mrkl_input]
         session_path = Path(__file__).parent / "runs" / session_name
         print(f"Playing saved session: {session_path}")
-        playback_callbacks([streamlit_handler], str(session_path), max_pause_time=3)
+        answer = playback_callbacks([streamlit_handler], str(session_path), max_pause_time=3)
+        res.write(f"**Answer:** {answer}")
     else:
-        mrkl.run(mrkl_input, callbacks=[streamlit_handler])
+        answer = mrkl.run(mrkl_input, callbacks=[streamlit_handler])
+        res.write(f"**Answer:** {answer}")

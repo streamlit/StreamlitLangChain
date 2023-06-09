@@ -89,6 +89,10 @@ def playback_callbacks(
             elif record["callback_type"] == CallbackType.ON_AGENT_FINISH:
                 handler.on_agent_finish(*record["args"], **record["kwargs"])
 
+    for record in records:
+        if record["callback_type"] == CallbackType.ON_AGENT_FINISH:
+            return record["args"][0][0]["output"]
+
 
 class CapturingCallbackHandler(BaseCallbackHandler):
     def __init__(self) -> None:
