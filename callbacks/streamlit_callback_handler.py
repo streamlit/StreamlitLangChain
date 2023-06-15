@@ -170,6 +170,7 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
     def __init__(
         self,
         parent_container: DeltaGenerator,
+        *,
         max_completed_thoughts: int,
         expand_new_thoughts: bool,
         contract_on_done: bool,
