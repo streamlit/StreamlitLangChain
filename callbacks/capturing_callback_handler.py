@@ -50,7 +50,7 @@ def playback_callbacks(
     handlers: list[BaseCallbackHandler],
     records_or_filename: list[CallbackRecord] | str,
     max_pause_time: float,
-) -> None:
+) -> str:
     if isinstance(records_or_filename, list):
         records = records_or_filename
     else:
@@ -89,9 +89,12 @@ def playback_callbacks(
             elif record["callback_type"] == CallbackType.ON_AGENT_FINISH:
                 handler.on_agent_finish(*record["args"], **record["kwargs"])
 
+    # Return the agent's result
     for record in records:
         if record["callback_type"] == CallbackType.ON_AGENT_FINISH:
             return record["args"][0][0]["output"]
+
+    return "[Missing Agent Result]"
 
 
 class CapturingCallbackHandler(BaseCallbackHandler):

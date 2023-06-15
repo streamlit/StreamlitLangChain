@@ -138,6 +138,7 @@ class LLMThought:
     def complete(self, final_label: str | None = None) -> None:
         """Finish the thought."""
         if final_label is None and self._state == LLMThoughtState.RUNNING_TOOL:
+            assert self._last_tool is not None
             final_label = self._get_tool_label(CHECKMARK_EMOJI, self._last_tool)
         self._state = LLMThoughtState.COMPLETE
         if self._contract_on_done:

@@ -18,9 +18,8 @@ placing the .db file in the same directory as this app.
 
 # Setup credentials in Streamlit
 user_openai_api_key = st.sidebar.text_input(
-    "OpenAI API Key",
-    type="password",
-    help="Set this to run your own custom questions.")
+    "OpenAI API Key", type="password", help="Set this to run your own custom questions."
+)
 user_serpapi_api_key = st.sidebar.text_input(
     "SerpAPI API Key",
     type="password",
@@ -119,7 +118,7 @@ if key in st.session_state and shadow_key not in st.session_state:
 with st.form(key="form"):
     if not enable_custom:
         "Ask one of the sample questions, or enter your API Keys in the sidebar to ask your own custom questions."
-    prefilled = st.selectbox("Sample questions", sorted(SAVED_SESSIONS.keys()))
+    prefilled = st.selectbox("Sample questions", sorted(SAVED_SESSIONS.keys())) or ""
     mrkl_input = ""
 
     if enable_custom:
@@ -140,7 +139,7 @@ if with_clear_container(submit_clicked):
     res = results_container.container()
     streamlit_handler = StreamlitCallbackHandler(
         parent_container=res,
-        max_completed_thoughts=max_completed_thoughts,
+        max_completed_thoughts=int(max_completed_thoughts),
         expand_new_thoughts=expand_new_thoughts,
         contract_on_done=contract_on_done,
         update_tool_label=True,
@@ -154,7 +153,9 @@ if with_clear_container(submit_clicked):
         session_name = SAVED_SESSIONS[mrkl_input]
         session_path = Path(__file__).parent / "runs" / session_name
         print(f"Playing saved session: {session_path}")
-        answer = playback_callbacks([streamlit_handler], str(session_path), max_pause_time=3)
+        answer = playback_callbacks(
+            [streamlit_handler], str(session_path), max_pause_time=3
+        )
         res.write(f"**Answer:** {answer}")
     else:
         answer = mrkl.run(mrkl_input, callbacks=[streamlit_handler])

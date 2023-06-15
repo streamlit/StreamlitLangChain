@@ -27,6 +27,8 @@ streamlit_handler = StreamlitCallbackHandler(
     parent_container=st.container(),
     expand_new_thoughts=expand_new_thoughts,
     max_completed_thoughts=int(max_completed_thoughts),
+    contract_on_done=True,
+    update_tool_label=True,
 )
 playback_callbacks(
     [streamlit_handler, StdOutCallbackHandler()],
