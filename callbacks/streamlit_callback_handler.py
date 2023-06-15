@@ -20,6 +20,7 @@ def _convert_newlines(text: str) -> str:
 CHECKMARK_EMOJI = "✅"
 THINKING_EMOJI = ":thinking_face:"
 HISTORY_EMOJI = ":books:"
+EXCEPTION_EMOJI = "⚠️"
 
 
 class LLMThoughtState(Enum):
@@ -37,8 +38,13 @@ class ToolRecord(NamedTuple):
 
 
 class LLMThought:
-    def __init__(self, parent_container: DeltaGenerator, expanded: bool,
-                 contract_on_done: bool, update_tool_label: bool):
+    def __init__(
+        self,
+        parent_container: DeltaGenerator,
+        expanded: bool,
+        contract_on_done: bool,
+        update_tool_label: bool,
+    ):
         self._container = MutableExpander(
             parent_container=parent_container,
             label=f"{THINKING_EMOJI} **Thinking...**",
@@ -148,7 +154,7 @@ class LLMThought:
         input = tool.input_str
         name = tool.name
         if name == "_Exception":
-            emoji = "⚠️"
+            emoji = EXCEPTION_EMOJI
             name = "Parsing error"
         idx = min([60, len(input)])
         input = input[0:idx]
@@ -192,7 +198,6 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         self._expand_new_thoughts = expand_new_thoughts
         self._contract_on_done = contract_on_done
         self._update_tool_label = update_tool_label
-        
 
     def _require_current_thought(self) -> LLMThought:
         """Return our current LLMThought. Raise an error if we have no current thought."""
@@ -235,8 +240,10 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
     ) -> None:
         if self._current_thought is None:
             self._current_thought = LLMThought(
-                self._parent_container, self._expand_new_thoughts,
-                self._contract_on_done, self._update_tool_label,
+                self._parent_container,
+                self._expand_new_thoughts,
+                self._contract_on_done,
+                self._update_tool_label,
             )
         self._current_thought.on_llm_start(serialized, prompts)
 
@@ -252,24 +259,6 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
     def on_tool_start(
         self, serialized: dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
-        # tool_name = serialized["name"]
-
-        # # If our last thought involved this same tool, "reopen" that last thought,
-        # # and fold this thought's contents into it. Our last thought will then become
-        # # our current thought.
-        # last_thought = self._get_last_completed_thought()
-        # if (
-        #     last_thought is not None
-        #     and last_thought.last_tool is not None
-        #     and last_thought.last_tool.name == tool_name
-        # ):
-        #     cur_thought = self._require_current_thought()
-        #     last_thought.append_copy(cur_thought)
-        #     cur_thought.clear()
-
-        #     self._current_thought = last_thought
-        #     self._completed_thoughts.pop()
-
         self._require_current_thought().on_tool_start(serialized, input_str, **kwargs)
 
     def on_tool_end(
@@ -324,10 +313,4 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         self, finish: AgentFinish, color: str | None = None, **kwargs: Any
     ) -> None:
         if self._current_thought is not None:
-            #self._complete_current_thought(f"{CHECKMARK_EMOJI} **Complete!**")
-            self._current_thought._container.clear()
-
-        # if "output" in finish.return_values:
-        #     self._parent_container.markdown(finish.return_values["output"])
-        # else:
-        #     self._parent_container.write(finish.return_values)
+            self._current_thought.container.clear()
