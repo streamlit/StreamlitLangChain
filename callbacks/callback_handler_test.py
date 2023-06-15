@@ -13,8 +13,8 @@ selected_run = st.sidebar.selectbox(
 max_pause_time = st.sidebar.number_input(
     "Max Pause Time", min_value=0.0, value=2.0, step=1.0
 )
-max_completed_thoughts = st.sidebar.number_input(
-    "Max Completed Thoughts",
+max_thought_containers = st.sidebar.number_input(
+    "Max Thought Containers",
     min_value=0,
     value=3,
     step=1,
@@ -26,7 +26,7 @@ RUN_PATH = Path(__file__).parent.parent / "runs" / str(selected_run)
 streamlit_handler = StreamlitCallbackHandler(
     parent_container=st.container(),
     expand_new_thoughts=expand_new_thoughts,
-    max_completed_thoughts=int(max_completed_thoughts),
+    max_thought_containers=int(max_thought_containers),
     contract_on_done=True,
     update_tool_label=True,
 )

@@ -171,7 +171,7 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         self,
         parent_container: DeltaGenerator,
         *,
-        max_completed_thoughts: int,
+        max_thought_containers: int,
         expand_new_thoughts: bool,
         contract_on_done: bool,
         update_tool_label: bool,
@@ -186,9 +186,9 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         expand_new_thoughts
             Each LLM "thought" gets its own `st.expander`. This param controls whether that
             expander is expanded by default.
-        max_completed_thoughts
-            The max number of completed LLM thought expanders to show at once. When this
-            threshold is reached, a new thought will cause the oldest thought to be
+        max_thought_containers
+            The max number of completed LLM thought containers to show at once. When this
+            threshold is reached, a new thought will cause the oldest thoughts to be
             collapsed into a "History" expander.
         """
         self._parent_container = parent_container
@@ -196,7 +196,7 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         self._history_container: MutableExpander | None = None
         self._current_thought: LLMThought | None = None
         self._completed_thoughts: list[LLMThought] = []
-        self._max_completed_thoughts = max_completed_thoughts
+        self._max_thought_containers = max(max_thought_containers, 1)
         self._expand_new_thoughts = expand_new_thoughts
         self._contract_on_done = contract_on_done
         self._update_tool_label = update_tool_label
@@ -213,6 +213,19 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
             return self._completed_thoughts[len(self._completed_thoughts) - 1]
         return None
 
+    @property
+    def _num_thought_containers(self) -> int:
+        """The number of 'thought containers' we're currently showing: the
+        number of completed thought containers, the history container (if it exists),
+        and the current thought container (if it exists).
+        """
+        count = len(self._completed_thoughts)
+        if self._history_container is not None:
+            count += 1
+        if self._current_thought is not None:
+            count += 1
+        return count
+
     def _complete_current_thought(self, final_label: str | None = None) -> None:
         """Complete the current thought, optionally assigning it a new label.
         Add it to our _completed_thoughts list.
@@ -222,10 +235,17 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         self._completed_thoughts.append(thought)
         self._current_thought = None
 
-        # If we have too many completed_thoughts onscreen, move our oldest
-        # one to the "history container"
-        while len(self._completed_thoughts) > self._max_completed_thoughts:
-            if self._history_container is None:
+    def _prune_old_thought_containers(self) -> None:
+        """If we have too many thoughts onscreen, move older thoughts to
+        the 'history container.'
+        """
+        while (
+            self._num_thought_containers > self._max_thought_containers
+            and len(self._completed_thoughts) > 0
+        ):
+            # Create our history container if it doesn't exist, and if max_thought_containers is > 1.
+            # (if max_thought_containers is 1, we don't have room to show history.)
+            if self._history_container is None and self._max_thought_containers > 1:
                 self._history_container = MutableExpander(
                     self._history_parent,
                     label=f"{HISTORY_EMOJI} **History**",
@@ -233,8 +253,9 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
                 )
 
             oldest_thought = self._completed_thoughts.pop(0)
-            self._history_container.markdown(oldest_thought.container.label)
-            self._history_container.append_copy(oldest_thought.container)
+            if self._history_container is not None:
+                self._history_container.markdown(oldest_thought.container.label)
+                self._history_container.append_copy(oldest_thought.container)
             oldest_thought.clear()
 
     def on_llm_start(
@@ -247,21 +268,29 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
                 self._contract_on_done,
                 self._update_tool_label,
             )
+
         self._current_thought.on_llm_start(serialized, prompts)
+
+        # We don't prune_old_thought_containers here, because our container won't
+        # be visible until it has a child.
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         self._require_current_thought().on_llm_new_token(token, **kwargs)
+        self._prune_old_thought_containers()
 
     def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         self._require_current_thought().on_llm_end(response, **kwargs)
+        self._prune_old_thought_containers()
 
     def on_llm_error(self, error: Exception | KeyboardInterrupt, **kwargs: Any) -> None:
         self._require_current_thought().on_llm_error(error, **kwargs)
+        self._prune_old_thought_containers()
 
     def on_tool_start(
         self, serialized: dict[str, Any], input_str: str, **kwargs: Any
     ) -> None:
         self._require_current_thought().on_tool_start(serialized, input_str, **kwargs)
+        self._prune_old_thought_containers()
 
     def on_tool_end(
         self,
@@ -280,6 +309,7 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         self, error: Exception | KeyboardInterrupt, **kwargs: Any
     ) -> None:
         self._require_current_thought().on_tool_error(error, **kwargs)
+        self._prune_old_thought_containers()
 
     def on_text(
         self,
@@ -310,6 +340,7 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         self, action: AgentAction, color: str | None = None, **kwargs: Any
     ) -> Any:
         self._require_current_thought().on_agent_action(action, color, **kwargs)
+        self._prune_old_thought_containers()
 
     def on_agent_finish(
         self, finish: AgentFinish, color: str | None = None, **kwargs: Any

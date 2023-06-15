@@ -14,7 +14,7 @@ from callbacks.capturing_callback_handler import (
 def StreamlitCallbackHandler(
     parent_container: DeltaGenerator,
     *,
-    max_completed_thoughts: int,
+    max_thought_containers: int,
     expand_new_thoughts: bool,
     contract_on_done: bool,
     update_tool_label: bool,
@@ -27,7 +27,7 @@ def StreamlitCallbackHandler(
 
         return OfficialStreamlitCallbackHandler(
             parent_container,
-            max_completed_thoughts=max_completed_thoughts,
+            max_thought_containers=max_thought_containers,
             expand_new_thoughts=expand_new_thoughts,
             contract_on_done=contract_on_done,
             update_tool_label=update_tool_label,
@@ -35,7 +35,7 @@ def StreamlitCallbackHandler(
     except ImportError:
         return _InternalStreamlitCallbackHandler(
             parent_container,
-            max_completed_thoughts=max_completed_thoughts,
+            max_thought_containers=max_thought_containers,
             expand_new_thoughts=expand_new_thoughts,
             contract_on_done=contract_on_done,
             update_tool_label=update_tool_label,

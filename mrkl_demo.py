@@ -95,8 +95,8 @@ contract_on_done = st.sidebar.checkbox(
     help="True if LLM thoughts should be contracted when they complete",
 )
 
-max_completed_thoughts = st.sidebar.number_input(
-    "Max Completed Thoughts",
+max_thought_containers = st.sidebar.number_input(
+    "Max Thought Containers",
     value=3,
     min_value=1,
     help="Max number of completed thoughts to show. When exceeded, older thoughts will be moved into a 'History' expander.",
@@ -139,7 +139,7 @@ if with_clear_container(submit_clicked):
     res = results_container.container()
     streamlit_handler = StreamlitCallbackHandler(
         parent_container=res,
-        max_completed_thoughts=int(max_completed_thoughts),
+        max_thought_containers=int(max_thought_containers),
         expand_new_thoughts=expand_new_thoughts,
         contract_on_done=contract_on_done,
         update_tool_label=True,
