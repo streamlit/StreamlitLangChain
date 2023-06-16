@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 from langchain.callbacks.base import BaseCallbackHandler
 from streamlit.delta_generator import DeltaGenerator
 
 from callbacks.streamlit_callback_handler import (
     StreamlitCallbackHandler as _InternalStreamlitCallbackHandler,
+    LLMThoughtLabeler as LLMThoughtLabeler,
 )
 from callbacks.capturing_callback_handler import (
     CapturingCallbackHandler as CapturingCallbackHandler,
@@ -14,10 +17,10 @@ from callbacks.capturing_callback_handler import (
 def StreamlitCallbackHandler(
     parent_container: DeltaGenerator,
     *,
-    max_thought_containers: int,
-    expand_new_thoughts: bool,
-    contract_on_done: bool,
-    update_tool_label: bool,
+    max_thought_containers: int = 3,
+    expand_new_thoughts: bool = True,
+    collapse_completed_thoughts: bool = True,
+    thought_labeler: LLMThoughtLabeler | None = None,
 ) -> BaseCallbackHandler:
     # If we're using a version of Streamlit that implements StreamlitCallbackHandler,
     # delegate to it instead of using our built-in handler. The official handler is
@@ -29,14 +32,14 @@ def StreamlitCallbackHandler(
             parent_container,
             max_thought_containers=max_thought_containers,
             expand_new_thoughts=expand_new_thoughts,
-            contract_on_done=contract_on_done,
-            update_tool_label=update_tool_label,
+            contract_on_done=collapse_completed_thoughts,
+            thought_labeler=thought_labeler,
         )
     except ImportError:
         return _InternalStreamlitCallbackHandler(
             parent_container,
             max_thought_containers=max_thought_containers,
             expand_new_thoughts=expand_new_thoughts,
-            contract_on_done=contract_on_done,
-            update_tool_label=update_tool_label,
+            collapse_completed_thoughts=collapse_completed_thoughts,
+            thought_labeler=thought_labeler,
         )

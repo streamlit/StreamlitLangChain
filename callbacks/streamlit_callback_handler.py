@@ -37,25 +37,77 @@ class ToolRecord(NamedTuple):
     input_str: str
 
 
+class LLMThoughtLabeler:
+    """
+    Generates markdown labels for LLMThought containers. Pass a custom
+    subclass of this to StreamlitCallbackHandler to override its default
+    labeling logic.
+    """
+
+    def get_initial_label(self) -> str:
+        """Return the markdown label for a new LLMThought that doesn't have
+        an associated tool yet.
+        """
+        return f"{THINKING_EMOJI} **Thinking...**"
+
+    def get_tool_label(self, tool: ToolRecord, is_complete: bool) -> str:
+        """Return the label for an LLMThought that has an associated
+        tool.
+
+        Parameters
+        ----------
+        tool
+            The tool's ToolRecord
+
+        is_complete
+            True if the thought is complete; False if the thought
+            is still receiving input.
+
+        Returns
+        -------
+        The markdown label for the thought's container.
+
+        """
+        input = tool.input_str
+        name = tool.name
+        emoji = CHECKMARK_EMOJI if is_complete else THINKING_EMOJI
+        if name == "_Exception":
+            emoji = EXCEPTION_EMOJI
+            name = "Parsing error"
+        idx = min([60, len(input)])
+        input = input[0:idx]
+        if len(tool.input_str) > idx:
+            input = input + "..."
+        input = input.replace("\n", " ")
+        label = f"{emoji} **{name}:** {input}"
+        return label
+
+    def get_history_label(self) -> str:
+        """Return a markdown label for the special 'history' container
+        that contains overflow thoughts.
+        """
+        return f"{HISTORY_EMOJI} **History**"
+
+
 class LLMThought:
     def __init__(
         self,
         parent_container: DeltaGenerator,
+        labeler: LLMThoughtLabeler,
         expanded: bool,
-        contract_on_done: bool,
-        update_tool_label: bool,
+        collapse_on_complete: bool,
     ):
         self._container = MutableExpander(
             parent_container=parent_container,
-            label=f"{THINKING_EMOJI} **Thinking...**",
+            label=labeler.get_initial_label(),
             expanded=expanded,
         )
         self._state = LLMThoughtState.THINKING
         self._llm_token_stream = ""
         self._llm_token_writer_idx: int | None = None
         self._last_tool: ToolRecord | None = None
-        self._contract_on_done: bool = contract_on_done
-        self._update_tool_label: bool = update_tool_label
+        self._collapse_on_complete = collapse_on_complete
+        self._labeler = labeler
 
     @property
     def container(self) -> MutableExpander:
@@ -99,10 +151,9 @@ class LLMThought:
         self._state = LLMThoughtState.RUNNING_TOOL
         tool_name = serialized["name"]
         self._last_tool = ToolRecord(name=tool_name, input_str=input_str)
-        if self._update_tool_label:
-            self._container.update(
-                new_label=self._get_tool_label(THINKING_EMOJI, self._last_tool)
-            )
+        self._container.update(
+            new_label=self._labeler.get_tool_label(self._last_tool, is_complete=False)
+        )
 
     def on_tool_end(
         self,
@@ -133,9 +184,11 @@ class LLMThought:
         """Finish the thought."""
         if final_label is None and self._state == LLMThoughtState.RUNNING_TOOL:
             assert self._last_tool is not None
-            final_label = self._get_tool_label(CHECKMARK_EMOJI, self._last_tool)
+            final_label = self._labeler.get_tool_label(
+                self._last_tool, is_complete=True
+            )
         self._state = LLMThoughtState.COMPLETE
-        if self._contract_on_done:
+        if self._collapse_on_complete:
             self._container.update(new_label=final_label, new_expanded=False)
         else:
             self._container.update(new_label=final_label)
@@ -143,21 +196,6 @@ class LLMThought:
     def clear(self) -> None:
         """Remove the thought from the screen. A cleared thought can't be reused."""
         self._container.clear()
-
-    @staticmethod
-    def _get_tool_label(emoji: str, tool: ToolRecord) -> str:
-        input = tool.input_str
-        name = tool.name
-        if name == "_Exception":
-            emoji = EXCEPTION_EMOJI
-            name = "Parsing error"
-        idx = min([60, len(input)])
-        input = input[0:idx]
-        if len(tool.input_str) > idx:
-            input = input + "..."
-        input = input.replace("\n", " ")
-        label = f"{emoji} **{name}:** {input}"
-        return label
 
 
 class StreamlitCallbackHandler(BaseCallbackHandler):
@@ -167,8 +205,8 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         *,
         max_thought_containers: int,
         expand_new_thoughts: bool,
-        contract_on_done: bool,
-        update_tool_label: bool,
+        collapse_completed_thoughts: bool,
+        thought_labeler: LLMThoughtLabeler | None = None,
     ):
         """Create a StreamlitCallbackHandler instance.
 
@@ -177,13 +215,18 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         parent_container
             The `st.container` that will contain all the Streamlit elements that the
             Handler creates.
-        expand_new_thoughts
-            Each LLM "thought" gets its own `st.expander`. This param controls whether that
-            expander is expanded by default.
         max_thought_containers
             The max number of completed LLM thought containers to show at once. When this
             threshold is reached, a new thought will cause the oldest thoughts to be
             collapsed into a "History" expander.
+        expand_new_thoughts
+            Each LLM "thought" gets its own `st.expander`. This param controls whether that
+            expander is expanded by default.
+        collapse_completed_thoughts
+            If True, LLM thought expanders will be collapsed when completed.
+        thought_labeler
+            An optional custom LLMThoughtLabeler instance. If unspecified, the handler
+            will use the default thought labeling logic.
         """
         self._parent_container = parent_container
         self._history_parent = parent_container.container()
@@ -192,8 +235,8 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         self._completed_thoughts: list[LLMThought] = []
         self._max_thought_containers = max(max_thought_containers, 1)
         self._expand_new_thoughts = expand_new_thoughts
-        self._contract_on_done = contract_on_done
-        self._update_tool_label = update_tool_label
+        self._collapse_completed_thoughts = collapse_completed_thoughts
+        self._thought_labeler = thought_labeler or LLMThoughtLabeler()
 
     def _require_current_thought(self) -> LLMThought:
         """Return our current LLMThought. Raise an error if we have no current thought."""
@@ -242,7 +285,7 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
             if self._history_container is None and self._max_thought_containers > 1:
                 self._history_container = MutableExpander(
                     self._history_parent,
-                    label=f"{HISTORY_EMOJI} **History**",
+                    label=self._thought_labeler.get_history_label(),
                     expanded=False,
                 )
 
@@ -257,10 +300,10 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
     ) -> None:
         if self._current_thought is None:
             self._current_thought = LLMThought(
-                self._parent_container,
-                self._expand_new_thoughts,
-                self._contract_on_done,
-                self._update_tool_label,
+                parent_container=self._parent_container,
+                expanded=self._expand_new_thoughts,
+                collapse_on_complete=self._collapse_completed_thoughts,
+                labeler=self._thought_labeler,
             )
 
         self._current_thought.on_llm_start(serialized, prompts)

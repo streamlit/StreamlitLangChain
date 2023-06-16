@@ -89,10 +89,10 @@ expand_new_thoughts = st.sidebar.checkbox(
     help="True if LLM thoughts should be expanded by default",
 )
 
-contract_on_done = st.sidebar.checkbox(
-    "Contract thoughts after complete",
+collapse_completed_thoughts = st.sidebar.checkbox(
+    "Collapse Completed Thoughts",
     value=True,
-    help="True if LLM thoughts should be contracted when they complete",
+    help="True if LLM thoughts should be collapsed when they complete",
 )
 
 max_thought_containers = st.sidebar.number_input(
@@ -141,8 +141,7 @@ if with_clear_container(submit_clicked):
         parent_container=res,
         max_thought_containers=int(max_thought_containers),
         expand_new_thoughts=expand_new_thoughts,
-        contract_on_done=contract_on_done,
-        update_tool_label=True,
+        collapse_completed_thoughts=collapse_completed_thoughts,
     )
 
     question_container.write(f"**Question:** {mrkl_input}")
