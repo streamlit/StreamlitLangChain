@@ -203,9 +203,9 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         self,
         parent_container: DeltaGenerator,
         *,
-        max_thought_containers: int,
-        expand_new_thoughts: bool,
-        collapse_completed_thoughts: bool,
+        max_thought_containers: int = 3,
+        expand_new_thoughts: bool = True,
+        collapse_completed_thoughts: bool = True,
         thought_labeler: LLMThoughtLabeler | None = None,
     ):
         """Create a StreamlitCallbackHandler instance.
@@ -218,15 +218,16 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         max_thought_containers
             The max number of completed LLM thought containers to show at once. When this
             threshold is reached, a new thought will cause the oldest thoughts to be
-            collapsed into a "History" expander.
+            collapsed into a "History" expander. Defaults to 3.
         expand_new_thoughts
             Each LLM "thought" gets its own `st.expander`. This param controls whether that
-            expander is expanded by default.
+            expander is expanded by default. Defaults to True.
         collapse_completed_thoughts
             If True, LLM thought expanders will be collapsed when completed.
+            Defaults to True.
         thought_labeler
             An optional custom LLMThoughtLabeler instance. If unspecified, the handler
-            will use the default thought labeling logic.
+            will use the default thought labeling logic. Defaults to None.
         """
         self._parent_container = parent_container
         self._history_parent = parent_container.container()

@@ -3,13 +3,10 @@ from pathlib import Path
 import streamlit as st
 from langchain.callbacks import StdOutCallbackHandler
 
-from callbacks.capturing_callback_handler import playback_callbacks
-from callbacks.streamlit_callback_handler import StreamlitCallbackHandler
+from callbacks import StreamlitCallbackHandler, playback_callbacks
 
 # Build our sidebar
-selected_run = st.sidebar.selectbox(
-    "Saved Query", ["hilton.pickle", "alanis.pickle", "leo.pickle"]
-)
+selected_run = st.sidebar.selectbox("Saved Query", ["alanis.pickle", "leo.pickle"])
 max_pause_time = st.sidebar.number_input(
     "Max Pause Time", min_value=0.0, value=2.0, step=1.0
 )
@@ -21,7 +18,7 @@ max_thought_containers = st.sidebar.number_input(
 )
 expand_new_thoughts = st.sidebar.checkbox("Expand New Thoughts by Default", value=True)
 
-RUN_PATH = Path(__file__).parent.parent / "runs" / str(selected_run)
+RUN_PATH = Path(__file__).parent / "runs" / str(selected_run)
 
 streamlit_handler = StreamlitCallbackHandler(
     parent_container=st.container(),
