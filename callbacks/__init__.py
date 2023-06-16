@@ -22,6 +22,38 @@ def StreamlitCallbackHandler(
     collapse_completed_thoughts: bool = True,
     thought_labeler: LLMThoughtLabeler | None = None,
 ) -> BaseCallbackHandler:
+    """Construct a new StreamlitCallbackHandler. This CallbackHandler is geared towards
+    use with a LangChain Agent; it displays the Agent's LLM and tool-usage "thoughts"
+    inside a series of Streamlit expanders.
+
+    Parameters
+    ----------
+    parent_container
+        The `st.container` that will contain all the Streamlit elements that the
+        Handler creates.
+    max_thought_containers
+        The max number of completed LLM thought containers to show at once. When this
+        threshold is reached, a new thought will cause the oldest thoughts to be
+        collapsed into a "History" expander. Defaults to 3.
+    expand_new_thoughts
+        Each LLM "thought" gets its own `st.expander`. This param controls whether that
+        expander is expanded by default. Defaults to True.
+    collapse_completed_thoughts
+        If True, LLM thought expanders will be collapsed when completed.
+        Defaults to True.
+    thought_labeler
+        An optional custom LLMThoughtLabeler instance. If unspecified, the handler
+        will use the default thought labeling logic. Defaults to None.
+
+    Returns
+    -------
+    A new StreamlitCallbackHandler instance.
+
+    Note that this is an "auto-updating" API: if the installed version of Streamlit
+    has a more recent StreamlitCallbackHandler implementation, an instance of that class
+    will be used.
+
+    """
     # If we're using a version of Streamlit that implements StreamlitCallbackHandler,
     # delegate to it instead of using our built-in handler. The official handler is
     # guaranteed to support the same set of kwargs.
