@@ -57,12 +57,6 @@ class LLMThought:
         self._contract_on_done: bool = contract_on_done
         self._update_tool_label: bool = update_tool_label
 
-    def append_copy(self, other: LLMThought) -> None:
-        """Append a copy of another LLMThought's contents to this one."""
-        self._container.append_copy(other._container)
-        self._reset_llm_token_stream()
-        self._last_tool = other._last_tool
-
     @property
     def container(self) -> MutableExpander:
         """The container we're writing into."""
