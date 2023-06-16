@@ -23,7 +23,7 @@ def StreamlitCallbackHandler(
     # delegate to it instead of using our built-in handler. The official handler is
     # guaranteed to support the same set of kwargs.
     try:
-        from streamlit.ml.langchain import StreamlitCallbackHandler as OfficialStreamlitCallbackHandler  # type: ignore
+        from streamlit.external.langchain import StreamlitCallbackHandler as OfficialStreamlitCallbackHandler  # type: ignore
 
         return OfficialStreamlitCallbackHandler(
             parent_container,
