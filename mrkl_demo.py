@@ -97,7 +97,7 @@ collapse_completed_thoughts = st.sidebar.checkbox(
 
 max_thought_containers = st.sidebar.number_input(
     "Max Thought Containers",
-    value=3,
+    value=4,
     min_value=1,
     help="Max number of completed thoughts to show. When exceeded, older thoughts will be moved into a 'History' expander.",
 )

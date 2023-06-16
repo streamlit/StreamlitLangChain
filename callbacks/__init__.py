@@ -17,7 +17,7 @@ from callbacks.capturing_callback_handler import (
 def StreamlitCallbackHandler(
     parent_container: DeltaGenerator,
     *,
-    max_thought_containers: int = 3,
+    max_thought_containers: int = 4,
     expand_new_thoughts: bool = True,
     collapse_completed_thoughts: bool = True,
     thought_labeler: LLMThoughtLabeler | None = None,
@@ -34,7 +34,7 @@ def StreamlitCallbackHandler(
     max_thought_containers
         The max number of completed LLM thought containers to show at once. When this
         threshold is reached, a new thought will cause the oldest thoughts to be
-        collapsed into a "History" expander. Defaults to 3.
+        collapsed into a "History" expander. Defaults to 4.
     expand_new_thoughts
         Each LLM "thought" gets its own `st.expander`. This param controls whether that
         expander is expanded by default. Defaults to True.
