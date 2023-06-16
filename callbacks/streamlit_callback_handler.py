@@ -383,5 +383,6 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
     def on_agent_finish(
         self, finish: AgentFinish, color: str | None = None, **kwargs: Any
     ) -> None:
-        if self._current_thought is not None:
-            self._current_thought.container.clear()
+        # if self._current_thought is not None:
+        #     self._current_thought.container.clear()
+        pass
