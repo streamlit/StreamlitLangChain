@@ -88,6 +88,13 @@ class LLMThoughtLabeler:
         """
         return f"{HISTORY_EMOJI} **History**"
 
+    def get_final_agent_thought_label(self) -> str:
+        """Return the markdown label for the agent's final thought -
+        the "Now I have the answer" thought, that doesn't involve
+        a tool.
+        """
+        return f"{CHECKMARK_EMOJI} **Complete!**"
+
 
 class LLMThought:
     def __init__(
@@ -384,5 +391,7 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         self, finish: AgentFinish, color: str | None = None, **kwargs: Any
     ) -> None:
         if self._current_thought is not None:
-            self._current_thought.complete()
+            self._current_thought.complete(
+                self._thought_labeler.get_final_agent_thought_label()
+            )
             self._current_thought = None
