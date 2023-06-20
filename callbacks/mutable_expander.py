@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import NamedTuple, Any, Optional
+from typing import Any, NamedTuple
 
 from streamlit.delta_generator import DeltaGenerator
 from streamlit.type_util import SupportsStr
@@ -19,7 +19,7 @@ class ChildRecord(NamedTuple):
 
 
 class MutableExpander:
-    """An expander that can be renamed and dynamically expanded/collapsed."""
+    """A Streamlit expander that can be renamed and dynamically expanded/collapsed."""
 
     def __init__(self, parent_container: DeltaGenerator, label: str, expanded: bool):
         """Create a new MutableExpander.
@@ -29,9 +29,10 @@ class MutableExpander:
         parent_container
             The `st.container` that the expander will be created inside.
 
-            The expander transparently deletes and recreates its underlying `st.expander`
-            instance when its label changes, and it uses `parent_container` to ensure
-            it recreates this underlying expander in the same location onscreen.
+            The expander transparently deletes and recreates its underlying
+            `st.expander` instance when its label changes, and it uses
+            `parent_container` to ensure it recreates this underlying expander in the
+            same location onscreen.
         label
             The expander's initial label.
         expanded
@@ -54,12 +55,16 @@ class MutableExpander:
         return self._expanded
 
     def clear(self) -> None:
-        """Remove the container and its contents entirely. A cleared container can't be reused."""
+        """Remove the container and its contents entirely. A cleared container can't
+        be reused.
+        """
         self._container = self._parent_cursor.empty()
         self._child_records.clear()
 
     def append_copy(self, other: MutableExpander) -> None:
-        """Append a copy of another MutableExpander's children to this MutableExpander."""
+        """Append a copy of another MutableExpander's children to this
+        MutableExpander.
+        """
         other_records = other._child_records.copy()
         for record in other_records:
             self._create_child(record.type, record.kwargs)

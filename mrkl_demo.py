@@ -47,7 +47,8 @@ with st.expander("👉 View the source code"), st.echo():
     from langchain.agents import AgentType
     from langchain.agents import initialize_agent, Tool
 
-    from callbacks import StreamlitCallbackHandler, playback_callbacks
+    from callbacks import StreamlitCallbackHandler
+    from callbacks.capturing_callback_handler import playback_callbacks
 
     # Tools setup
     DB_PATH = (Path(__file__).parent / "Chinook.db").absolute()
