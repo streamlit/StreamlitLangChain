@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from enum import Enum
 from typing import Any, NamedTuple
 
@@ -106,6 +107,7 @@ class LLMThought:
         labeler: LLMThoughtLabeler,
         expanded: bool,
         collapse_on_complete: bool,
+        collapse_delay: float,
     ):
         self._container = MutableExpander(
             parent_container=parent_container,
@@ -117,6 +119,7 @@ class LLMThought:
         self._llm_token_writer_idx: int | None = None
         self._last_tool: ToolRecord | None = None
         self._collapse_on_complete = collapse_on_complete
+        self._collapse_delay = collapse_delay
         self._labeler = labeler
 
     @property
@@ -199,6 +202,8 @@ class LLMThought:
             )
         self._state = LLMThoughtState.COMPLETE
         if self._collapse_on_complete:
+            if self._collapse_delay > 0:
+                time.sleep(self._collapse_delay)
             self._container.update(new_label=final_label, new_expanded=False)
         else:
             self._container.update(new_label=final_label)
@@ -216,6 +221,7 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         max_thought_containers: int = 4,
         expand_new_thoughts: bool = True,
         collapse_completed_thoughts: bool = True,
+        collapse_thoughts_delay: float = 1,
         thought_labeler: LLMThoughtLabeler | None = None,
     ):
         """Create a StreamlitCallbackHandler instance.
@@ -235,6 +241,9 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         collapse_completed_thoughts
             If True, LLM thought expanders will be collapsed when completed.
             Defaults to True.
+        collapse_thoughts_delay
+            If collapse_completed_thoughts is True, delay the thought's collapse
+            animation for this many seconds.
         thought_labeler
             An optional custom LLMThoughtLabeler instance. If unspecified, the handler
             will use the default thought labeling logic. Defaults to None.
@@ -247,6 +256,7 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
         self._max_thought_containers = max(max_thought_containers, 1)
         self._expand_new_thoughts = expand_new_thoughts
         self._collapse_completed_thoughts = collapse_completed_thoughts
+        self._collapse_thoughts_delay = collapse_thoughts_delay
         self._thought_labeler = thought_labeler or LLMThoughtLabeler()
 
     def _require_current_thought(self) -> LLMThought:
@@ -317,6 +327,7 @@ class StreamlitCallbackHandler(BaseCallbackHandler):
                 parent_container=self._parent_container,
                 expanded=self._expand_new_thoughts,
                 collapse_on_complete=self._collapse_completed_thoughts,
+                collapse_delay=self._collapse_thoughts_delay,
                 labeler=self._thought_labeler,
             )
 

@@ -16,6 +16,7 @@ def StreamlitCallbackHandler(
     max_thought_containers: int = 4,
     expand_new_thoughts: bool = True,
     collapse_completed_thoughts: bool = True,
+    collapse_thoughts_delay: float = 1,
     thought_labeler: LLMThoughtLabeler | None = None,
 ) -> BaseCallbackHandler:
     """Construct a new StreamlitCallbackHandler. This CallbackHandler is geared towards
@@ -37,6 +38,9 @@ def StreamlitCallbackHandler(
     collapse_completed_thoughts
         If True, LLM thought expanders will be collapsed when completed.
         Defaults to True.
+    collapse_thoughts_delay
+        If collapse_completed_thoughts is True, delay the thought's collapse
+        animation for this many seconds.
     thought_labeler
         An optional custom LLMThoughtLabeler instance. If unspecified, the handler
         will use the default thought labeling logic. Defaults to None.
@@ -62,7 +66,8 @@ def StreamlitCallbackHandler(
             parent_container,
             max_thought_containers=max_thought_containers,
             expand_new_thoughts=expand_new_thoughts,
-            contract_on_done=collapse_completed_thoughts,
+            collapse_completed_thoughts=collapse_completed_thoughts,
+            collapse_thoughts_delay=collapse_thoughts_delay,
             thought_labeler=thought_labeler,
         )
     except ImportError:
@@ -71,5 +76,6 @@ def StreamlitCallbackHandler(
             max_thought_containers=max_thought_containers,
             expand_new_thoughts=expand_new_thoughts,
             collapse_completed_thoughts=collapse_completed_thoughts,
+            collapse_thoughts_delay=collapse_thoughts_delay,
             thought_labeler=thought_labeler,
         )
