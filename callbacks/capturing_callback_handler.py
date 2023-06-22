@@ -23,7 +23,7 @@ class CallbackType:
     ON_CHAIN_START = "on_chain_start"
     ON_CHAIN_END = "on_chain_end"
     ON_CHAIN_ERROR = "on_chain_error"
-    ON_AGENT_ACTION = "on_agent_action"
+    # ON_AGENT_ACTION = "on_agent_action"
     ON_AGENT_FINISH = "on_agent_finish"
 
 
@@ -84,8 +84,8 @@ def playback_callbacks(
                 handler.on_chain_end(*record["args"], **record["kwargs"])
             elif record["callback_type"] == CallbackType.ON_CHAIN_ERROR:
                 handler.on_chain_error(*record["args"], **record["kwargs"])
-            elif record["callback_type"] == CallbackType.ON_AGENT_ACTION:
-                handler.on_agent_action(*record["args"], **record["kwargs"])
+            # elif record["callback_type"] == CallbackType.ON_AGENT_ACTION:
+            #     handler.on_agent_action(*record["args"], **record["kwargs"])
             elif record["callback_type"] == CallbackType.ON_AGENT_FINISH:
                 handler.on_agent_finish(*record["args"], **record["kwargs"])
 
@@ -152,8 +152,8 @@ class CapturingCallbackHandler(BaseCallbackHandler):
     def on_chain_error(self, *args: Any, **kwargs: Any) -> None:
         self._append_record(CallbackType.ON_CHAIN_ERROR, args, kwargs)
 
-    def on_agent_action(self, *args: Any, **kwargs: Any) -> Any:
-        self._append_record(CallbackType.ON_AGENT_ACTION, args, kwargs)
+    # def on_agent_action(self, *args: Any, **kwargs: Any) -> Any:
+    #     self._append_record(CallbackType.ON_AGENT_ACTION, args, kwargs)
 
     def on_agent_finish(self, *args: Any, **kwargs: Any) -> None:
         self._append_record(CallbackType.ON_AGENT_FINISH, args, kwargs)
