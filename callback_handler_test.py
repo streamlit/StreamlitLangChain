@@ -1,9 +1,10 @@
-from pathlib import Path
+from pathlib import Path 
 
 import streamlit as st
 from langchain.callbacks import StdOutCallbackHandler
 
-from callbacks import StreamlitCallbackHandler, playback_callbacks
+from callbacks import StreamlitCallbackHandler
+from callbacks.capturing_callback_handler import playback_callbacks
 
 # Build our sidebar
 selected_run = st.sidebar.selectbox("Saved Query", ["alanis.pickle", "leo.pickle"])
@@ -26,6 +27,7 @@ streamlit_handler = StreamlitCallbackHandler(
     max_thought_containers=int(max_thought_containers),
     collapse_completed_thoughts=True,
 )
+
 playback_callbacks(
     [streamlit_handler, StdOutCallbackHandler()],
     str(RUN_PATH),
