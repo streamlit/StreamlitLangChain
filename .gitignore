@@ -1,7 +1,5 @@
 .idea/
-.streamlit/
 __pycache__/
 .DS_Store
 jeepers/
-callbacks/
 .chat
