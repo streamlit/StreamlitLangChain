@@ -5,7 +5,7 @@ name = "pypi"
 
 [packages]
 streamlit = "*"
-langchain = "*"
+langchain = ">=0.0.211"
 openai = "*"
 google-search-results = "*"
 watchdog = "*"

@@ -46,8 +46,8 @@ with st.expander("👉 View the source code"), st.echo():
     )
     from langchain.agents import AgentType
     from langchain.agents import initialize_agent, Tool
+    from langchain.callbacks import StreamlitCallbackHandler
 
-    from callbacks import StreamlitCallbackHandler
     from callbacks.capturing_callback_handler import playback_callbacks
 
     # Tools setup
@@ -96,13 +96,13 @@ collapse_completed_thoughts = st.sidebar.checkbox(
     help="True if LLM thoughts should be collapsed when they complete",
 )
 
-collapse_thoughts_delay = st.sidebar.number_input(
-    "Collapse Thoughts Delay",
-    value=1.0,
-    min_value=0.0,
-    step=0.5,
-    help="If Collapse Completed Thoughts is true, delay the collapse animation for this many seconds.",
-)
+# collapse_thoughts_delay = st.sidebar.number_input(
+#     "Collapse Thoughts Delay",
+#     value=1.0,
+#     min_value=0.0,
+#     step=0.5,
+#     help="If Collapse Completed Thoughts is true, delay the collapse animation for this many seconds.",
+# )
 
 max_thought_containers = st.sidebar.number_input(
     "Max Thought Containers",
@@ -151,7 +151,6 @@ if with_clear_container(submit_clicked):
         max_thought_containers=int(max_thought_containers),
         expand_new_thoughts=expand_new_thoughts,
         collapse_completed_thoughts=collapse_completed_thoughts,
-        collapse_thoughts_delay=collapse_thoughts_delay,
     )
 
     question_container.write(f"**Question:** {mrkl_input}")
