@@ -72,11 +72,14 @@ mrkl = initialize_agent(
     tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
 )
 
-key = "input"
-shadow_key = "_input"
+if "latest_user_input" not in st.session_state:
+    st.session_state["latest_user_input"] = ""
 
-if key in st.session_state and shadow_key not in st.session_state:
-    st.session_state[shadow_key] = st.session_state[key]
+if "latest_user_input_executed" not in st.session_state:
+    st.session_state["latest_user_input_executed"] = False
+
+if "dirty_state" not in st.session_state:
+    st.session_state["dirty_state"] = "initial"
 
 with st.form(key="form"):
     if not enable_custom:
@@ -85,35 +88,43 @@ with st.form(key="form"):
     mrkl_input = ""
 
     if enable_custom:
-        mrkl_input = st.text_input("Or, ask your own question", key=shadow_key)
-        st.session_state[key] = mrkl_input
+        user_input = st.text_input("Or, ask your own question")
     if not mrkl_input:
-        mrkl_input = prefilled
+        user_input = prefilled
     submit_clicked = st.form_submit_button("Submit Question")
 
-question_container = st.empty()
-results_container = st.empty()
+if submit_clicked:
+    st.session_state["latest_user_input"] = user_input
+    st.session_state["latest_user_input_executed"] = False
 
-# A hack to "clear" the previous result when submitting a new prompt.
-from clear_results import with_clear_container
+if st.session_state["dirty_state"] == "dirty":
+    st.session_state["dirty_state"] = "initial"
+    for i in range(10):
+        st.empty()
+    st.experimental_rerun()
 
-if with_clear_container(submit_clicked):
-    # Create our StreamlitCallbackHandler
-    res = results_container.container()
-    streamlit_handler = StreamlitCallbackHandler(parent_container=res)
+if not st.session_state["latest_user_input_executed"] and st.session_state["dirty_state"] == "initial":
+    if st.session_state["latest_user_input"]:
+        st.chat_message("user").write(st.session_state["latest_user_input"])
 
-    question_container.write(f"**Question:** {mrkl_input}")
+        result_container = st.chat_message("assistant", avatar="🦜")
+        st_callback = StreamlitCallbackHandler(result_container)
 
-    # If we've saved this question, play it back instead of actually running LangChain
-    # (so that we don't exhaust our API calls unnecessarily)
-    if mrkl_input in SAVED_SESSIONS:
-        session_name = SAVED_SESSIONS[mrkl_input]
-        session_path = Path(__file__).parent / "runs" / session_name
-        print(f"Playing saved session: {session_path}")
-        answer = playback_callbacks(
-            [streamlit_handler], str(session_path), max_pause_time=3
-        )
-        res.write(f"**Answer:** {answer}")
-    else:
-        answer = mrkl.run(mrkl_input, callbacks=[streamlit_handler])
-        res.write(f"**Answer:** {answer}")
+        # If we've saved this question, play it back instead of actually running LangChain
+        # (so that we don't exhaust our API calls unnecessarily)
+        if st.session_state["latest_user_input"] in SAVED_SESSIONS:
+            session_name = SAVED_SESSIONS[st.session_state["latest_user_input"]]
+            session_path = Path(__file__).parent / "runs" / session_name
+            print(f"Playing saved session: {session_path}")
+            answer = playback_callbacks(
+                [st_callback], str(session_path), max_pause_time=3
+            )
+        else:
+            answer = mrkl.run(st.session_state["latest_user_input"], callbacks=[st_callback])
+    
+        result_container.write(answer)
+        st.session_state["dirty_state"] = "dirty"
+        st.session_state["latest_user_input_executed"] = True
+
+for i in range(10):
+    st.empty()
