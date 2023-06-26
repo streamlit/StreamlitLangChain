@@ -13,8 +13,15 @@ import streamlit as st
 
 from callbacks import playback_callbacks
 
-st.set_page_config(page_title="MRKL", page_icon="🦜", layout="wide", initial_sidebar_state="collapsed")
 DB_PATH = (Path(__file__).parent / "Chinook.db").absolute()
+SAVED_SESSIONS = {
+    "Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?": "leo.pickle",
+    "What is the full name of the artist who recently released an album called "
+    "'The Storm Before the Calm' and are they in the FooBar database? If so, what albums of theirs "
+    "are in the FooBar database?": "alanis.pickle",
+}
+
+st.set_page_config(page_title="MRKL", page_icon="🦜", layout="wide", initial_sidebar_state="collapsed")
 
 "## 🦜🔗 MRKL"
 
@@ -33,8 +40,8 @@ if user_openai_api_key and user_serpapi_api_key:
     serpapi_api_key = user_serpapi_api_key
     enable_custom = True
 else:
-    openai_api_key = st.secrets["openai_api_key"]
-    serpapi_api_key = st.secrets["serpapi_api_key"]
+    openai_api_key = "not_supplied"
+    serpapi_api_key = "not_supplied"
     enable_custom = False
 
 llm = OpenAI(temperature=0, openai_api_key=openai_api_key, streaming=True)
@@ -64,13 +71,6 @@ tools = [
 mrkl = initialize_agent(
     tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
 )
-
-SAVED_SESSIONS = {
-    "Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?": "leo.pickle",
-    "What is the full name of the artist who recently released an album called "
-    "'The Storm Before the Calm' and are they in the FooBar database? If so, what albums of theirs "
-    "are in the FooBar database?": "alanis.pickle",
-}
 
 key = "input"
 shadow_key = "_input"
