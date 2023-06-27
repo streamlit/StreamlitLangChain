@@ -20,19 +20,12 @@ placing the .db file in the same directory as this app.
 user_openai_api_key = st.sidebar.text_input(
     "OpenAI API Key", type="password", help="Set this to run your own custom questions."
 )
-user_serpapi_api_key = st.sidebar.text_input(
-    "SerpAPI API Key",
-    type="password",
-    help="Set this to run your own custom questions. Get yours at https://serpapi.com/manage-api-key.",
-)
 
-if user_openai_api_key and user_serpapi_api_key:
+if user_openai_api_key:
     openai_api_key = user_openai_api_key
-    serpapi_api_key = user_serpapi_api_key
     enable_custom = True
 else:
-    openai_api_key = st.secrets["openai_api_key"]
-    serpapi_api_key = st.secrets["serpapi_api_key"]
+    openai_api_key = "not_supplied"
     enable_custom = False
 
 with st.expander("👉 View the source code"), st.echo():
@@ -40,13 +33,13 @@ with st.expander("👉 View the source code"), st.echo():
     from langchain import (
         LLMMathChain,
         OpenAI,
-        SerpAPIWrapper,
         SQLDatabase,
         SQLDatabaseChain,
     )
     from langchain.agents import AgentType
     from langchain.agents import initialize_agent, Tool
     from langchain.callbacks import StreamlitCallbackHandler
+    from langchain.utilities import DuckDuckGoSearchAPIWrapper
 
     from callbacks.capturing_callback_handler import playback_callbacks
 
@@ -54,7 +47,7 @@ with st.expander("👉 View the source code"), st.echo():
     DB_PATH = (Path(__file__).parent / "Chinook.db").absolute()
 
     llm = OpenAI(temperature=0, openai_api_key=openai_api_key, streaming=True)
-    search = SerpAPIWrapper(serpapi_api_key=serpapi_api_key)
+    search = DuckDuckGoSearchAPIWrapper()
     llm_math_chain = LLMMathChain(llm=llm, verbose=True)
     db = SQLDatabase.from_uri(f"sqlite:///{DB_PATH}")
     db_chain = SQLDatabaseChain.from_llm(llm, db, verbose=True)

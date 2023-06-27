@@ -4,11 +4,11 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-streamlit-nightly = "*"
-langchain = ">=0.0.211"
+streamlit = ">=1.24.0"
 openai = "*"
-google-search-results = "*"
 watchdog = "*"
+duckduckgo-search = "*"
+langchain = ">=0.0.217"
 
 [dev-packages]
 black = "*"
