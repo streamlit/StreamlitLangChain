@@ -1,6 +1,6 @@
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.chat_models import ChatOpenAI
-from langchain.schema import HumanMessage
+from langchain.schema import ChatMessage
 import streamlit as st
 
 
@@ -18,15 +18,13 @@ with st.sidebar:
     openai_api_key = st.text_input("OpenAI API Key", type="password")
 
 if "messages" not in st.session_state:
-    st.session_state["messages"] = [
-        {"role": "assistant", "content": "How can I help you?"}
-    ]
+    st.session_state["messages"] = [ChatMessage(role="assistant", content="How can I help you?")]
 
 for msg in st.session_state.messages:
-    st.chat_message(msg["role"]).write(msg["content"])
+    st.chat_message(msg.role).write(msg.content)
 
 if prompt := st.chat_input():
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    st.session_state.messages.append(ChatMessage(role="user", content=prompt))
     st.chat_message("user").write(prompt)
 
     if not openai_api_key:
@@ -36,11 +34,7 @@ if prompt := st.chat_input():
     with st.chat_message("assistant"):
         container = st.empty()
         stream_handler = StreamHandler(container)
-        llm = ChatOpenAI(
-            openai_api_key=openai_api_key, streaming=True, callbacks=[stream_handler]
-        )
-        response = llm([HumanMessage(content=prompt)])
-        st.session_state.messages.append(
-            {"role": "assistant", "content": response.content}
-        )
+        llm = ChatOpenAI(openai_api_key=openai_api_key, streaming=True, callbacks=[stream_handler])
+        response = llm(st.session_state.messages)
+        st.session_state.messages.append(ChatMessage(role="assistant", content=response.content))
         container.markdown(response.content)
