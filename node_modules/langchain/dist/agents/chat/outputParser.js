@@ -1,0 +1,38 @@
+import { AgentActionOutputParser } from "../types.js";
+import { FORMAT_INSTRUCTIONS } from "./prompt.js";
+export const FINAL_ANSWER_ACTION = "Final Answer:";
+export class ChatAgentOutputParser extends AgentActionOutputParser {
+    constructor() {
+        super(...arguments);
+        Object.defineProperty(this, "lc_namespace", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: ["langchain", "agents", "chat"]
+        });
+    }
+    async parse(text) {
+        if (text.includes(FINAL_ANSWER_ACTION) || !text.includes(`"action":`)) {
+            const parts = text.split(FINAL_ANSWER_ACTION);
+            const output = parts[parts.length - 1].trim();
+            return { returnValues: { output }, log: text };
+        }
+        const action = text.includes("```")
+            ? text.trim().split(/```(?:json)?/)[1]
+            : text.trim();
+        try {
+            const response = JSON.parse(action.trim());
+            return {
+                tool: response.action,
+                toolInput: response.action_input,
+                log: text,
+            };
+        }
+        catch {
+            throw new Error(`Unable to parse JSON response from chat agent.\n\n${text}`);
+        }
+    }
+    getFormatInstructions() {
+        return FORMAT_INSTRUCTIONS;
+    }
+}

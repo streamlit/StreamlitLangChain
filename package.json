@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "get": "^1.4.0",
+    "langchain": "^0.0.103",
+    "transformers": "^3.1.0"
+  }
+}

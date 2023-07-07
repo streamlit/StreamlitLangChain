@@ -66,7 +66,7 @@ memory = ConversationBufferMemory(memory_key="chat_history", return_messages=Tru
 #     Authorization="Bearer: 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",
 # )
 
-llm = ChatOpenAI(temperature=0, openai_api_key=openai_api_key, model="gpt-3.5-turbo-16k-0613", streaming=True)
+llm = ChatOpenAI(temperature=0, openai_api_key=openai_api_key, model="gpt-4-0613", streaming=True)
 search = SerpAPIWrapper(serpapi_api_key=serpapi_api_key)
 llm_math_chain = LLMMathChain(llm=llm, verbose=True)
 pubmed = PubmedQueryRun()
