@@ -88,7 +88,7 @@ class MutableExpander:
 
         prev_records = self._child_records
         self._child_records = []
-
+        
         # Replay all children into the new container
         for record in prev_records:
             self._create_child(record.type, record.kwargs)
@@ -96,7 +96,7 @@ class MutableExpander:
     def markdown(
         self,
         body: SupportsStr,
-        unsafe_allow_html: bool = False,
+        unsafe_allow_html: bool = True,
         *,
         help: str | None = None,
         index: int | None = None,

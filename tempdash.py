@@ -1,15 +1,12 @@
 from pathlib import Path
-import requests
-from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
 
 from langchain.utilities import ArxivAPIWrapper, BingSearchAPIWrapper, WikipediaAPIWrapper, WolframAlphaAPIWrapper, DuckDuckGoSearchAPIWrapper
-from langchain.agents import Tool, load_tools  
+from langchain.agents import Tool  
 import streamlit as st 
 from langchain.memory import ConversationBufferMemory
 from langchain.chat_models import ChatOpenAI
 from langchain import (
         LLMMathChain,
-        OpenAI,
         SerpAPIWrapper,
         SQLDatabase,
         SQLDatabaseChain,
@@ -18,17 +15,14 @@ from langchain.utilities import (
         BingSearchAPIWrapper, 
     )
 from langchain.tools import (
-        GooglePlacesTool, 
         Tool,
-        AIPluginTool,
         PubmedQueryRun,
-        HumanInputRun,
+        GooglePlacesTool,
 )
 from langchain.agents import (
         initialize_agent,
         AgentType,
         Tool,
-        load_tools,
 )
 
 from callbacks import StreamlitCallbackHandler
@@ -37,17 +31,15 @@ from callbacks.capturing_callback_handler import playback_callbacks
 
 # Streamlit Setup
 st.set_page_config(
-    page_title="JeepersGLM", 
-    page_icon="🤵", 
+    page_title="Dreamwalker", 
+    page_icon="💭", 
     layout="wide",
     menu_items=None)
  
-"# 🤵 JeepersGLM" 
- 
-"""
-con_text - 03a_shard_chain
+"# 💭 Dreamwalker" 
+"### con|text - 03a_shard_chain. luke@lukesteuber.com. \n"
 
-"""
+"A grounded rather than generative language model (not GPT, but GLM). Built atop Llama, Bison (PAlM), langchain, and other tools. Experimental."
 
 tab1, tab2, tab3 = st.tabs(["Chat", "Settings", "About"])
 
@@ -70,20 +62,17 @@ wikipedia = WikipediaAPIWrapper()
 wolfram = WolframAlphaAPIWrapper()
 arxiv = ArxivAPIWrapper()
 duck = DuckDuckGoSearchAPIWrapper()
+places = GooglePlacesTool()
 
 db = SQLDatabase.from_uri(f"sqlite:///{DB_PATH}")
 db_chain = SQLDatabaseChain.from_llm(llm, db, verbose=True)
-
-# tools = [
-#     Tool(name="Wikipedia", func=wikipedia, description="wikipedia, the world's open source encyclopedia"),
-#     Tool(name="PubMed", func=pubmed, description="medical journals and articles"),
-#     Tool(name="Wolfram Alpha", func=wolfram, description="wolfram alpha, the world's computational knowledge engine"),
-#     Tool(name="Google Search", func=search, description="Google search."),
-#     Tool(name="arxiv", func=arxiv, description="open source research and datasets across many topic areas"),
-#     Tool(name="Duck Duck Go", func=duck, description="Duck Duck Go search.")
-# ]
  
 tools = [ 
+        Tool(
+            name="PubMed",
+            func=pubmed.run,
+            description="Medical journals and articles. If you use this, use another tool too. Provide APA-formatted citations in your final answer.",
+        ),
         Tool(
             name="Arxiv",
             func=arxiv.run,
@@ -114,11 +103,11 @@ tools = [
             func=llm_math_chain.run,
             description="Useful for when you need to answer questions about math",
         ),
-        # Tool(
-        #     name="FooBar DB",
-        #     func=db_chain.run,
-        #     description="useful for when you need to answer questions about FooBar. Input should be in the form of a question containing full context",
-        # ),
+        Tool(
+            name="Places",
+            func=places.run,
+            description="Google Places, geography and location search. Useful for when you need to answer questions about places",
+        ),
     ]
 
 
@@ -126,21 +115,23 @@ jeepers = initialize_agent(
         tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True, memory=memory,
 )
 
-
+with tab3:
+    st.markdown("https://www.linkedin.com/in/lukesteuber/")
+    st.markdown("bluesky: @coolhand")
 with tab2:
-    expand_new_thoughts = st.sidebar.checkbox(
+    expand_new_thoughts = st.checkbox(
         "Expand New Thoughts",
         value=True,
         help="True if LLM thoughts should be expanded by default",
     )
-    collapse_completed_thoughts = st.sidebar.checkbox(
+    collapse_completed_thoughts = st.checkbox(
         "Collapse Completed",
         value=True,
         help="True if LLM thoughts should be collapsed when they complete",
     )
     collapse_thoughts_delay = st.number_input(
         "Collapse Thoughts Delay",
-        value=1.0,
+        value=3.0,
         min_value=0.0,
         step=0.5,
         help="If Collapse Completed Thoughts is true, delay the collapse animation for this many seconds.",
@@ -153,10 +144,8 @@ with tab2:
     )
 
 SAVED_SESSIONS = {
-    "Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?": "leo.pickle",
-    "What is the full name of the artist who recently released an album called "
-    "'The Storm Before the Calm' and are they in the FooBar database? If so, what albums of theirs "
-    "are in the FooBar database?": "alanis.pickle",
+    "temp": "leo.pickle",
+    "temp2": "alanis.pickle",
 }
 
 key = "input"
@@ -170,9 +159,10 @@ with tab1:
     thought_container = st.empty()
         
     st.write("") 
-    with form_container:
+    with form_container: 
             with st.form(key="form"):
-                mrkl_input = st.text_area("What question do you want answered?", key=shadow_key)
+                "Write a detailed question for me to research and comprehensively answer. Use the question below or replace it with your own. Be as specific as possible and include any web links I should start with. Please be patient as I respond and reload if there is an error."
+                mrkl_input = st.text_area("How can I help?", key=shadow_key, placeholder="What are the key memes, themes, emotions, topics, people, and news related to Bluesky social media today, Thursday, July 6, 2023. Comprehensively detail them with links. Also comprehensively collect news and affect around these other social media sites and related personalities: Twitter, Threads, Instagram, Mastadon, Spill, Reddit, Facebook. Include links to primary sources and specific profiles. Then provide an interpretation of current events and recommendations where relevant.")
                 st.session_state[key] = mrkl_input
                 submit_clicked = st.form_submit_button("Submit Question", type="primary")
 
@@ -193,19 +183,6 @@ with tab1:
             collapse_completed_thoughts=collapse_completed_thoughts,
             collapse_thoughts_delay=collapse_thoughts_delay,
         ) 
-        # with question_container:
-        #     st.markdown(f"> **Question:** {mrkl_input}")
-
-        # If we've saved this question, play it back instead of actually running LangChain
-        # (so that we don't exhaust our API calls unnecessarily)
-        if mrkl_input in SAVED_SESSIONS:
-            session_name = SAVED_SESSIONS[mrkl_input]
-            session_path = Path(__file__).parent / "runs" / session_name
-            print(f"Playing saved session: {session_path}")
-            answer = playback_callbacks(
-                [streamlit_handler], str(session_path), max_pause_time=3
-            )
-            thought_container.write(f"{answer}")
-        else:
-            answer = jeepers.run(mrkl_input, callbacks=[streamlit_handler])
-            thought_container.write(f"{answer}")
+        
+        answer = jeepers.run(mrkl_input, callbacks=[streamlit_handler])
+        thought_container.write(f"{answer}")
