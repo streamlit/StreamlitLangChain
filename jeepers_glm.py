@@ -112,7 +112,7 @@ tools = [
         #     description="useful for when you need to answer questions about FooBar. Input should be in the form of a question containing full context",
         # ),
     ]
-
+ 
 
 jeepers = initialize_agent(
         tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True, memory=memory,

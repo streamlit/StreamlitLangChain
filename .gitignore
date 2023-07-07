@@ -2,5 +2,6 @@
 __pycache__/
 .DS_Store
 jeepers/
-.chat
-.streamlit
+.chat/*
+.streamlit/secrets.toml
+node*
