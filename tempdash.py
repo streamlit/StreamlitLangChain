@@ -91,7 +91,7 @@ tools = [
         Tool( 
             name="Crawler",
             func=search.run,
-            description="General internet search. Useful for specific questions; when in doubt, try this first",
+            description="All purpose search; try this tool first, best with specxificx questions.",
         ),
         Tool(
             name="DuckDuckGo",
@@ -142,7 +142,6 @@ with tab2:
         min_value=1,
         help="Max number of completed thoughts to show. When exceeded, older thoughts will be moved into a 'History' expander.",
     )
-
 
 
 key = "input"
