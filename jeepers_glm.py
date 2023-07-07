@@ -74,14 +74,6 @@ duck = DuckDuckGoSearchAPIWrapper()
 db = SQLDatabase.from_uri(f"sqlite:///{DB_PATH}")
 db_chain = SQLDatabaseChain.from_llm(llm, db, verbose=True)
 
-# tools = [
-#     Tool(name="Wikipedia", func=wikipedia, description="wikipedia, the world's open source encyclopedia"),
-#     Tool(name="PubMed", func=pubmed, description="medical journals and articles"),
-#     Tool(name="Wolfram Alpha", func=wolfram, description="wolfram alpha, the world's computational knowledge engine"),
-#     Tool(name="Google Search", func=search, description="Google search."),
-#     Tool(name="arxiv", func=arxiv, description="open source research and datasets across many topic areas"),
-#     Tool(name="Duck Duck Go", func=duck, description="Duck Duck Go search.")
-# ]
  
 tools = [ 
         Tool(

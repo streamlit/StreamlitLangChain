@@ -143,10 +143,7 @@ with tab2:
         help="Max number of completed thoughts to show. When exceeded, older thoughts will be moved into a 'History' expander.",
     )
 
-SAVED_SESSIONS = {
-    "temp": "leo.pickle",
-    "temp2": "alanis.pickle",
-}
+
 
 key = "input"
 shadow_key = "_input"
@@ -162,7 +159,7 @@ with tab1:
     with form_container: 
             with st.form(key="form"):
                 "Write a detailed question for me to research and comprehensively answer. Use the question below or replace it with your own. Be as specific as possible and include any web links I should start with. Please be patient as I respond and reload if there is an error."
-                mrkl_input = st.text_area("How can I help?", key=shadow_key, placeholder="What are the key memes, themes, emotions, topics, people, and news related to Bluesky social media today, Thursday, July 6, 2023. Comprehensively detail them with links. Also comprehensively collect news and affect around these other social media sites and related personalities: Twitter, Threads, Instagram, Mastadon, Spill, Reddit, Facebook. Include links to primary sources and specific profiles. Then provide an interpretation of current events and recommendations where relevant.")
+                mrkl_input = st.text_area("How can I help?", key=shadow_key, value="What are the key themes, emotions, topics, people, and news being discussed both on, and related to, Bluesky social media today over the past eight hours. Comprehensively detail them with links. Also comprehensively collect news and affect around these other social media sites and related personalities: Twitter, Threads, Instagram, Mastadon, Spill, Reddit, Facebook. Include links to primary sources and specific profiles. Then provide an interpretation of current events and recommendations where relevant.")
                 st.session_state[key] = mrkl_input
                 submit_clicked = st.form_submit_button("Submit Question", type="primary")
 
